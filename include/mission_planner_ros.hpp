@@ -25,7 +25,7 @@ enum Colors { RED = 0, BLUE = 2, YELLOW = 3 };
 class MissionPlannerRos {
  public:
   //! MissionPlannerRos constructor
-  MissionPlannerRos(ros::NodeHandle _nh, const bool leader);
+  MissionPlannerRos(ros::NodeHandle _nh);
 
   //! MissionPlannerRos destructor
   ~MissionPlannerRos();

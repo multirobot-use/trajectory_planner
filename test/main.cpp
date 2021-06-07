@@ -5,9 +5,7 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "mission_planner");
   ros::NodeHandle nh("~");
 
-  bool leader = true;
-  safeGetParam(nh, "leader", leader);
-  MissionPlannerRos MissionPlannerRos(nh, leader);
+  MissionPlannerRos MissionPlannerRos(nh);
 
   ros::spin();
   return 0;

@@ -1,6 +1,6 @@
 #include "mission_planner_ros.hpp"
 
-MissionPlannerRos::MissionPlannerRos(ros::NodeHandle _nh, const bool leader)
+MissionPlannerRos::MissionPlannerRos(ros::NodeHandle _nh)
     : nh_(_nh) {
   // ros params
   safeGetParam(nh_, "horizon_length", param_.horizon_length);
