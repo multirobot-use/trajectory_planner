@@ -188,9 +188,7 @@ class MissionPlanner {
    * @return true if all checks are passed
    * @return false if any ot the check is not passed
    */
-  virtual bool checks() {
-    std::cout << "check mission planner abstract" << std::endl;
-  }
+  virtual bool checks() {    return true;}
 
   /**
    * @brief gives an initial orientation according to a trajectory given
