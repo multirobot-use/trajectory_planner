@@ -20,7 +20,6 @@ include_directories(${EIGEN3_INCLUDE_DIR} ${PCL_INCLUDE_DIRS} ${ACADO_INCLUDE_DI
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  std_srvs
   std_msgs
   message_generation
   geometry_msgs
@@ -38,12 +37,6 @@ generate_messages(
   nav_msgs
 )
 
-# catkin_package(
-#  INCLUDE_DIRS include
-#   LIBRARIES mission_planner
-#   CATKIN_DEPENDS roscpp rospy std_msgs std_srvs
-# )
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -53,11 +46,12 @@ generate_messages(
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
+ 
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES mission_planner
-#  CATKIN_DEPENDS roscpp rospy std_msgs
-#  DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES trajectory_planner
+  CATKIN_DEPENDS roscpp rospy std_msgs trajectory_msgs nav_msgs geometry_msgs message_generation
+  DEPENDS ACADO Eigen3
 )
 
 ###########
@@ -70,8 +64,12 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
-add_library(mission_planner src/mission_planner.cpp include/mission_planner_types.hpp include/log.h)
+add_library(${PROJECT_NAME} src/trajectory_planner.cpp include/trajectory_planner_types.hpp include/log.h)
 
-add_executable(${PROJECT_NAME}_node test/main.cpp src/mission_planner_ros.cpp)
-target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} ${ACADO_SHARED_LIBRARIES} mission_planner)
-add_dependencies(${PROJECT_NAME}_node ${catkin_EXPORTED_TARGETS} )
+#either from message generation or dynamic reconfigure
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  yaml-cpp
+  ${ACADO_SHARED_LIBRARIES}
+)

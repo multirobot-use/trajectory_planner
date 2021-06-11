@@ -2,7 +2,7 @@
 <package format="2">
   <name>trajectory_planner</name>
   <version>0.0.0</version>
-  <description>The mission_planner package</description>
+  <description>The trajectory_planner package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/mission_planner</url> -->
+  <!-- <url type="website">http://wiki.ros.org/trajectory_planner</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->
@@ -69,6 +69,7 @@
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>message_generation</exec_depend>
 
 
 

@@ -5,8 +5,9 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
-#include <mission_planner_types.hpp>
+#include <trajectory_planner_types.hpp>
 
+namespace trajectory_planner{
 class Logger {
  public:
   Logger(const int drone_id) {
@@ -62,4 +63,5 @@ class Logger {
   std::chrono::time_point<std::chrono::steady_clock> initial_time;
 };
 
+}
 #endif

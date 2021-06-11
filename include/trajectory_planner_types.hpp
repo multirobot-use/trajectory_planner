@@ -2,6 +2,8 @@
 
 #include "ros/ros.h"
 
+namespace trajectory_planner{
+
 struct parameters {
   float horizon_length = 0;        // number of steps
   int n_drones = 1;                // number of drones
@@ -66,4 +68,6 @@ inline Eigen::Vector3d rotateEig(const Eigen::Vector3d &eigen_to_rotate,
   Eigen::Quaterniond rotation = eulerToQuat(0, 0, angle);
   Eigen::Matrix3d rotMat = rotation.toRotationMatrix();
   return rotMat * eigen_to_rotate;
+}
+
 }

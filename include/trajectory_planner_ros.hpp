@@ -13,28 +13,30 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <visualization_msgs/Marker.h>
 #include "ros/ros.h"
-#include <mission_planner.hpp>
+#include <trajectory_planner.hpp>
+
+namespace trajectory_planner {
 
 enum Colors { RED = 0, BLUE = 2, YELLOW = 3 };
 
-//!  MissionPlannerRos class.
+//!  TrajectoryPlannerRos class.
 /*!
   A class to handle the functionality of the mission planner on ROS.
 */
 
-class MissionPlannerRos {
+class TrajectoryPlannerRos {
  public:
-  //! MissionPlannerRos constructor
-  MissionPlannerRos(ros::NodeHandle _nh);
+  //! TrajectoryPlannerRos constructor
+  TrajectoryPlannerRos(ros::NodeHandle _nh);
 
-  //! MissionPlannerRos destructor
-  ~MissionPlannerRos();
+  //! TrajectoryPlannerRos destructor
+  ~TrajectoryPlannerRos();
 
  private:
   // Declarations
   ros::NodeHandle nh_;
   parameters param_;
-  std::unique_ptr<MissionPlanner> mission_planner_ptr_;
+  std::unique_ptr<TrajectoryPlanner> trajectory_planner_ptr_;
   ros::Timer planTimer_;
   ros::Timer pubVis_;
 
@@ -136,3 +138,5 @@ class MissionPlannerRos {
    */
   void setMarkerColor(visualization_msgs::Marker &marker, const Colors &color);
 };
+
+}

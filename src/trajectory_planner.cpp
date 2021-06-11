@@ -1,6 +1,8 @@
-#include "mission_planner.hpp"
+#include "trajectory_planner.hpp"
 
-MissionPlanner::MissionPlanner(const parameters _param)
+using namespace trajectory_planner;
+
+TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
     : param_(_param),
       my_grid_(0.0, (param_.horizon_length - 1) * param_.step_size,
                param_.horizon_length) {
@@ -11,9 +13,9 @@ MissionPlanner::MissionPlanner(const parameters _param)
   logger_ = std::make_unique<Logger>(param_.drone_id);
 }
 
-MissionPlanner::~MissionPlanner() {}
+TrajectoryPlanner::~TrajectoryPlanner() {}
 
-void MissionPlanner::plan() {
+void TrajectoryPlanner::plan() {
   if (!hasGoal()) planner_state_ = PlannerStatus::FIRST_PLAN;
 
   if (!checks()) return;
@@ -55,7 +57,7 @@ void MissionPlanner::plan() {
 }
 
 
-void MissionPlanner::optimalOrientation(
+void TrajectoryPlanner::optimalOrientation(
     const std::vector<state> &traj_to_optimize) {
   // // DifferentialState heading, pitch, v_heading, v_pitch;
   // DifferentialState heading, v_heading;
@@ -150,7 +152,7 @@ void MissionPlanner::optimalOrientation(
   // (ros::Time::now() - start).toSec(), success_value); return success_value;
 }
 
-std::vector<state> MissionPlanner::pathFromPointToAnother(
+std::vector<state> TrajectoryPlanner::pathFromPointToAnother(
     const Eigen::Vector3d &initial, const Eigen::Vector3d &final) {
   std::vector<state> trajectory_to_optimize;
   state aux_point;
@@ -164,7 +166,7 @@ std::vector<state> MissionPlanner::pathFromPointToAnother(
   return trajectory_to_optimize;
 }
 
-bool MissionPlanner::optimalTrajectory(
+bool TrajectoryPlanner::optimalTrajectory(
     const std::vector<state> &initial_trajectory) {
   if (initial_trajectory.size() != param_.horizon_length) return -2;
   ACADO::DifferentialState px_, py_, pz_, vx_, vy_, vz_;
@@ -230,9 +232,9 @@ bool MissionPlanner::optimalTrajectory(
   // solver.set(ACADO::PRINT_INTEGRATOR_PROFILE, false);
   // solver.set(ACADO::CONIC_SOLVER_PRINT_LEVEL, ACADO::NONE);
   // solver.set(ACADO::RELAXATION_PARAMETER, 30.0);
-  solver.set(ACADO::PRINTLEVEL, ACADO::NONE);
-  solver.set(ACADO::PRINT_COPYRIGHT, ACADO::NONE);
-  solver.set(ACADO::INTEGRATOR_PRINTLEVEL, ACADO::NONE);
+  // solver.set(ACADO::PRINTLEVEL, ACADO::NONE);
+  // solver.set(ACADO::PRINT_COPYRIGHT, ACADO::NONE);
+  // solver.set(ACADO::INTEGRATOR_PRINTLEVEL, ACADO::NONE);
 
   bool solver_success = solver.solve();
 
@@ -263,7 +265,7 @@ bool MissionPlanner::optimalTrajectory(
   az_.clearStaticCounters();
 };
 
-int MissionPlanner::closestPoint(const std::vector<state> &initial_trajectory,
+int TrajectoryPlanner::closestPoint(const std::vector<state> &initial_trajectory,
                                  const state point) {
   float dist = INFINITY;
   float aux_dist = 0;

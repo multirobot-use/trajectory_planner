@@ -7,9 +7,11 @@
 #include <acado_toolkit.hpp>
 #include <map>
 #include "log.h"
-#include "mission_planner_types.hpp"
+#include "trajectory_planner_types.hpp"
 
-//! MissionPlanner class
+namespace trajectory_planner {
+
+//! TrajectoryPlanner class
 /*!
  * Abstract base class for mission planner. It cannot be instantiated
  */
@@ -17,7 +19,7 @@
 enum PlannerStatus { FIRST_PLAN = 0, REPLANNED = 2 };
 enum MissionStatus { GO_TO = 0, MISSION_ZONE = 1 };
 
-class MissionPlanner {
+class TrajectoryPlanner {
  public:
   std::unique_ptr<Logger> logger_;
   std::vector<state> reference_traj;
@@ -26,12 +28,12 @@ class MissionPlanner {
   /**
    * @brief constructor of the class
    */
-  MissionPlanner(const parameters _param);
+  TrajectoryPlanner(const parameters _param);
 
   /**
    * @brief destructor of the class
    */
-  virtual ~MissionPlanner();
+  virtual ~TrajectoryPlanner();
 
   /**
    * @brief pushes back a new goal on the vector of goal points to reach
@@ -217,3 +219,5 @@ class MissionPlanner {
   int closestPoint(const std::vector<state> &initial_trajectory,
                    const state point);
 };
+
+}

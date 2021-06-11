@@ -1,0 +1,11 @@
+# PARAMS for mission planner 
+
+horizon_length: 40 # steps
+n_drones: 1        # drones
+step_size: 0.1     # seconds
+planning_rate: 1   # sec
+visualization_rate: 3   # sec
+vel_max: 0.7         # m/s
+acc_max: 1         # m/s²
+
+frame: "map"

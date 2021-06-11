@@ -1,11 +1,11 @@
-#include "mission_planner_ros.hpp"
+#include "trajectory_planner_ros.hpp"
 
 int main(int argc, char **argv) {
   // Initializes ROS, and sets up a node
-  ros::init(argc, argv, "mission_planner");
+  ros::init(argc, argv, "trajectory_planner");
   ros::NodeHandle nh("~");
 
-  MissionPlannerRos MissionPlannerRos(nh);
+  TrajectoryPlannerRos TrajectoryPlannerRos(nh);
 
   ros::spin();
   return 0;

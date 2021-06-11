@@ -1,6 +1,8 @@
-#include "mission_planner_ros.hpp"
+#include "trajectory_planner_ros.hpp"
 
-MissionPlannerRos::MissionPlannerRos(ros::NodeHandle _nh)
+using namespace trajectory_planner;
+
+TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh)
     : nh_(_nh) {
   // ros params
   safeGetParam(nh_, "horizon_length", param_.horizon_length);
@@ -13,33 +15,33 @@ MissionPlannerRos::MissionPlannerRos(ros::NodeHandle _nh)
   safeGetParam(nh_, "frame", param_.frame);
   safeGetParam(nh_, "drone_id", param_.drone_id);
 
-  mission_planner_ptr_ = std::make_unique<MissionPlanner>(param_);
+  trajectory_planner_ptr_ = std::make_unique<TrajectoryPlanner>(param_);
 
 
   // Subscribers
   for (int drone = 1; drone <= param_.n_drones; drone++) {
     cur_pose_sub_[drone] = nh_.subscribe<geometry_msgs::PoseStamped>(
         "/drone_" + std::to_string(drone) + "/ual/pose", 1,
-        std::bind(&MissionPlannerRos::uavPoseCallback, this,
+        std::bind(&TrajectoryPlannerRos::uavPoseCallback, this,
                   std::placeholders::_1, drone));
 
     cur_vel_sub_[drone] = nh_.subscribe<geometry_msgs::TwistStamped>(
         "/drone_" + std::to_string(drone) + "/ual/velocity", 1,
-        std::bind(&MissionPlannerRos::uavVelocityCallback, this,
+        std::bind(&TrajectoryPlannerRos::uavVelocityCallback, this,
                   std::placeholders::_1, drone));
 
     if (drone != param_.drone_id) {
       solved_trajectories_sub_[drone] = nh_.subscribe<nav_msgs::Path>(
           "/drone_" + std::to_string(drone) +
-              "/mission_planner_ros/solved_traj",
+              "/trajectory_planner_ros/solved_traj",
           1,
-          std::bind(&MissionPlannerRos::solvedTrajCallback, this,
+          std::bind(&TrajectoryPlannerRos::solvedTrajCallback, this,
                     std::placeholders::_1, drone));
     }
   }
   // create timer
   planTimer_ = nh_.createTimer(ros::Duration(param_.planning_rate),
-                               &MissionPlannerRos::replanCB, this);
+                               &TrajectoryPlannerRos::replanCB, this);
   planTimer_.stop();
 
   // publishers
@@ -56,19 +58,19 @@ MissionPlannerRos::MissionPlannerRos(ros::NodeHandle _nh)
 
   // Services
   service_activate_planner = nh_.advertiseService(
-      "activate_planner", &MissionPlannerRos::activationPlannerServiceCallback,
+      "activate_planner", &TrajectoryPlannerRos::activationPlannerServiceCallback,
       this);
   service_waypoint = nh_.advertiseService(
-      "add_waypoint", &MissionPlannerRos::addWaypointServiceCallback, this);
+      "add_waypoint", &TrajectoryPlannerRos::addWaypointServiceCallback, this);
   clear_waypoints = nh_.advertiseService(
-      "clear_waypoints", &MissionPlannerRos::clearWaypointsServiceCallback,
+      "clear_waypoints", &TrajectoryPlannerRos::clearWaypointsServiceCallback,
       this);
 }
 
-MissionPlannerRos::~MissionPlannerRos() {}
+TrajectoryPlannerRos::~TrajectoryPlannerRos() {}
 
 // Callbacks
-bool MissionPlannerRos::activationPlannerServiceCallback(
+bool TrajectoryPlannerRos::activationPlannerServiceCallback(
     std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
   ROS_INFO("[%s]: Activation planner service called.",
            ros::this_node::getName().c_str());
@@ -87,7 +89,7 @@ bool MissionPlannerRos::activationPlannerServiceCallback(
   return true;
 }
 
-bool MissionPlannerRos::addWaypointServiceCallback(
+bool TrajectoryPlannerRos::addWaypointServiceCallback(
     trajectory_planner::WaypointSrv::Request &req,
     trajectory_planner::WaypointSrv::Response &res) {
   ROS_INFO("[%s]: Add waypoint service called.",
@@ -107,36 +109,36 @@ bool MissionPlannerRos::addWaypointServiceCallback(
   state_req.vel[1] = req.waypoint.twist.twist.linear.y;
   state_req.vel[2] = req.waypoint.twist.twist.linear.z;
 
-  mission_planner_ptr_->appendGoal(state_req);
+  trajectory_planner_ptr_->appendGoal(state_req);
 
   res.success = true;
 }
 
-bool MissionPlannerRos::clearWaypointsServiceCallback(
+bool TrajectoryPlannerRos::clearWaypointsServiceCallback(
     std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
   ROS_INFO("[%s]: Clear waypoints service called.",
            ros::this_node::getName().c_str());
 
-  mission_planner_ptr_->clearGoals();
+  trajectory_planner_ptr_->clearGoals();
 }
 
 
-void MissionPlannerRos::replanCB(const ros::TimerEvent &e) {
-  if (mission_planner_ptr_->getStatus() != PlannerStatus::FIRST_PLAN) {
+void TrajectoryPlannerRos::replanCB(const ros::TimerEvent &e) {
+  if (trajectory_planner_ptr_->getStatus() != PlannerStatus::FIRST_PLAN) {
     publishTrajectoryJoint(tracking_pub_trajectory_,
-                           mission_planner_ptr_->getLastTrajectory());
-    publishPath(pub_path_, mission_planner_ptr_->getLastTrajectory());
-    publishPath(pub_ref_path_, mission_planner_ptr_->getReferenceTrajectory());
+                           trajectory_planner_ptr_->getLastTrajectory());
+    publishPath(pub_path_, trajectory_planner_ptr_->getLastTrajectory());
+    publishPath(pub_ref_path_, trajectory_planner_ptr_->getReferenceTrajectory());
   }
-  mission_planner_ptr_->plan();
+  trajectory_planner_ptr_->plan();
 }
 
-void MissionPlannerRos::pubVisCB(const ros::TimerEvent &e) {
+void TrajectoryPlannerRos::pubVisCB(const ros::TimerEvent &e) {
   // publish commanded waypoint
   publishPoints(points_pub_, points_, Colors::RED);
 
   // publish transformed waypoints
-  std::vector<state> goals = mission_planner_ptr_->getGoals();
+  std::vector<state> goals = trajectory_planner_ptr_->getGoals();
 
   geometry_msgs::Point point;
   std::vector<geometry_msgs::Point> points;
@@ -150,7 +152,7 @@ void MissionPlannerRos::pubVisCB(const ros::TimerEvent &e) {
 }
 
 
-void MissionPlannerRos::solvedTrajCallback(const nav_msgs::Path::ConstPtr &msg,
+void TrajectoryPlannerRos::solvedTrajCallback(const nav_msgs::Path::ConstPtr &msg,
                                            int id) {
   state aux_state;
   std::vector<state> path;
@@ -160,23 +162,23 @@ void MissionPlannerRos::solvedTrajCallback(const nav_msgs::Path::ConstPtr &msg,
     aux_state.pos(2) = pose.pose.position.z;
     path.push_back(aux_state);
   }
-  mission_planner_ptr_->setSolvedTrajectories(path, id);
+  trajectory_planner_ptr_->setSolvedTrajectories(path, id);
 }
-void MissionPlannerRos::uavPoseCallback(
+void TrajectoryPlannerRos::uavPoseCallback(
     const geometry_msgs::PoseStamped::ConstPtr &msg, int id) {
-  mission_planner_ptr_->states_[id].pos[0] = msg->pose.position.x;
-  mission_planner_ptr_->states_[id].pos[1] = msg->pose.position.y;
-  mission_planner_ptr_->states_[id].pos[2] = msg->pose.position.z;
+  trajectory_planner_ptr_->states_[id].pos[0] = msg->pose.position.x;
+  trajectory_planner_ptr_->states_[id].pos[1] = msg->pose.position.y;
+  trajectory_planner_ptr_->states_[id].pos[2] = msg->pose.position.z;
 }
 
-void MissionPlannerRos::uavVelocityCallback(
+void TrajectoryPlannerRos::uavVelocityCallback(
     const geometry_msgs::TwistStamped::ConstPtr &msg, int id) {
-  mission_planner_ptr_->states_[id].vel[0] = msg->twist.linear.x;
-  mission_planner_ptr_->states_[id].vel[1] = msg->twist.linear.y;
-  mission_planner_ptr_->states_[id].vel[2] = msg->twist.linear.z;
+  trajectory_planner_ptr_->states_[id].vel[0] = msg->twist.linear.x;
+  trajectory_planner_ptr_->states_[id].vel[1] = msg->twist.linear.y;
+  trajectory_planner_ptr_->states_[id].vel[2] = msg->twist.linear.z;
 }
 
-void MissionPlannerRos::setMarkerColor(visualization_msgs::Marker &marker,
+void TrajectoryPlannerRos::setMarkerColor(visualization_msgs::Marker &marker,
                                        const Colors &color) {
   switch (color) {
     case Colors::RED:
@@ -199,7 +201,7 @@ void MissionPlannerRos::setMarkerColor(visualization_msgs::Marker &marker,
   }
 }
 
-void MissionPlannerRos::publishPoints(
+void TrajectoryPlannerRos::publishPoints(
     const ros::Publisher &pub_points,
     const std::vector<geometry_msgs::Point> &_points, Colors color) {
   visualization_msgs::Marker points;
@@ -224,7 +226,7 @@ void MissionPlannerRos::publishPoints(
   pub_points.publish(points);
 }
 
-void MissionPlannerRos::publishPath(const ros::Publisher &pub_path,
+void TrajectoryPlannerRos::publishPath(const ros::Publisher &pub_path,
                                     const std::vector<state> &trajectory) {
   nav_msgs::Path path_to_publish;
   geometry_msgs::PoseStamped aux_pose;
@@ -248,7 +250,7 @@ void MissionPlannerRos::publishPath(const ros::Publisher &pub_path,
   }
 }
 
-void MissionPlannerRos::publishTrajectoryJoint(
+void TrajectoryPlannerRos::publishTrajectoryJoint(
     const ros::Publisher &pub_path, const std::vector<state> &trajectory) {
   trajectory_msgs::JointTrajectory trajectory_to_follow;
   trajectory_msgs::JointTrajectoryPoint point_to_follow;
