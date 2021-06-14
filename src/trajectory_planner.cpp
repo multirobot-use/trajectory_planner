@@ -13,6 +13,13 @@ TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
   logger_ = std::make_unique<Logger>(param_.drone_id);
 }
 
+TrajectoryPlanner::TrajectoryPlanner() : 
+      my_grid_(0.0, (param_.horizon_length - 1) * param_.step_size,
+               param_.horizon_length){
+    // initialize logger
+  logger_ = std::make_unique<Logger>(param_.drone_id);
+}
+
 TrajectoryPlanner::~TrajectoryPlanner() {}
 
 void TrajectoryPlanner::plan() {
@@ -37,7 +44,9 @@ void TrajectoryPlanner::plan() {
 
   reference_traj = initialTrajectory(initial_pose);
   if (reference_traj.empty()) {
+    planner_state_ == PlannerStatus::FIRST_PLAN;
     std::cout << "Initial trajectory empty...breaking" << std::endl;
+    return;
   } else {
     if (trajectoryHasNan(reference_traj)) {
       std::cout << "Initial trajectory has nan" << std::endl;
@@ -51,7 +60,7 @@ void TrajectoryPlanner::plan() {
     }
   }
   // calculate orientation
-  // initialOrientation(solved_trajectories_[param_.drone_id]);
+  initialOrientation(solved_trajectories_[param_.drone_id]);
 
   planner_state_ = PlannerStatus::REPLANNED;
 }

@@ -5,19 +5,15 @@
 namespace trajectory_planner{
 
 struct parameters {
-  float horizon_length = 0;        // number of steps
+  float horizon_length = 40;        // number of steps
   int n_drones = 1;                // number of drones
   float step_size = 0.1;           // seconds
-  float planning_rate = 0.0;       // sec
-  float visualization_rate = 0.0;  // sec
-  int drone_id = 0;
-  float vel_max = 0.0;
-  float acc_max = 0.0;
-  std::string frame;
-  float inspection_dist = 1;  // meters
-  int leader_id = 1;
-  float inc_distance = 0.1;
-  float inc_angle = 0.01;
+  float planning_rate = 1.0;       // sec
+  float visualization_rate = 1.0;  // sec
+  int drone_id = 1;
+  float vel_max = 5.0;
+  float acc_max = 5.0;
+  std::string frame = "map";
 };
 
 struct state {

@@ -13,7 +13,7 @@ namespace trajectory_planner {
 
 //! TrajectoryPlanner class
 /*!
- * Abstract base class for mission planner. It cannot be instantiated
+ * Abstract base class for mission planner.
  */
 
 enum PlannerStatus { FIRST_PLAN = 0, REPLANNED = 2 };
@@ -25,6 +25,11 @@ class TrajectoryPlanner {
   std::vector<state> reference_traj;
   std::map<int, state> states_;
 
+  /**
+   * @brief default constructor
+   * 
+   */
+  TrajectoryPlanner();
   /**
    * @brief constructor of the class
    */
@@ -40,7 +45,7 @@ class TrajectoryPlanner {
    *
    * @param _goal new waypoint to add
    */
-  virtual void appendGoal(const state &_goal) {
+  void appendGoal(const state &_goal) {
     goals_.push_back(std::move(_goal));
   }
 
@@ -83,7 +88,7 @@ class TrajectoryPlanner {
   /**
    * @brief executes the planner of the drone
    */
-  void plan();
+  virtual void plan();
 
   /**
    * @brief sets the solved trajectories for each drone
@@ -96,9 +101,10 @@ class TrajectoryPlanner {
     solved_trajectories_[_drone_id] = solved_trajectory;
   }
 
+
  protected:
   const parameters param_;
-  const ACADO::Grid my_grid_;
+  ACADO::Grid my_grid_;
   std::vector<state> goals_;
   bool init = true;
   Eigen::Vector3d init_point_;
@@ -114,6 +120,13 @@ class TrajectoryPlanner {
    */
   std::vector<state> pathFromPointToAnother(const Eigen::Vector3d &initial,
                                             const Eigen::Vector3d &final);
+
+  /**
+   * @brief Function that add the desired orientation to the trajectory
+   * 
+   * @param traj solved trajectory
+   */
+  virtual void initialOrientation(std::vector<state> &traj) {}
 
   /**
    * @brief check formation poses
@@ -175,14 +188,14 @@ class TrajectoryPlanner {
    * @return true if is optimal
    * @return false if is not optimal
    */
-  virtual bool optimalTrajectory(const std::vector<state> &initial_trajectory);
+  bool optimalTrajectory(const std::vector<state> &initial_trajectory);
 
   /**
    * @brief gives the next waypoint to reach
    *
    * @return the next waypoint to reach
    */
-  virtual state nextGoal() { return goals_[0]; }
+  state nextGoal() { return goals_[0]; }
 
   /**
    * @brief virtual function that makes the following checks
@@ -197,7 +210,7 @@ class TrajectoryPlanner {
    *
    * @param traj trajectory
    */
-  void initialOrientation(std::vector<state> &traj);
+  // virtual void initialOrientation(std::vector<state> &traj);
 
   /**
    * @brief gives an optimal orientation according to a trajectory given
