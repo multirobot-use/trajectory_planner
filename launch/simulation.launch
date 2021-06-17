@@ -29,7 +29,7 @@
     
     <!-- Launch trajectory_planner_node -->
     <node pkg="trajectory_planner" type="trajectory_planner_node" name="trajectory_planner_ros" output="screen" ns="drone_$(arg drone_id)" launch-prefix="">
-        <rosparam file="$(find trajectory_planner)/param/trajectory_planner.yml" command="load"/>
+        <rosparam file="$(find trajectory_planner)/test/param.yml" command="load"/>
         <param name="drone_id" value="$(arg drone_id)"/>
     </node>
 

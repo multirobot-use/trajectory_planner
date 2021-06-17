@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "trajectory_planner");
   ros::NodeHandle nh("~");
 
-  TrajectoryPlannerRos TrajectoryPlannerRos(nh);
+  trajectory_planner::TrajectoryPlannerRos TrajectoryPlannerRos(nh);
 
   ros::spin();
   return 0;

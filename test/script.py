@@ -18,11 +18,11 @@ from uav_abstraction_layer.srv import TakeOffRequest
 from uav_abstraction_layer.srv import GoToWaypoint
 from uav_abstraction_layer.srv import GoToWaypointRequest
 from uav_abstraction_layer.msg import State
-from mission_planner.srv import WaypointSrvRequest
-from mission_planner.srv import WaypointSrv
+from trajectory_planner.srv import WaypointSrv
+from trajectory_planner.srv import WaypointSrvRequest
 import signal
 import sys
-from collections import namedtuple
+# from collections import namedtuple
 
 
 class Drone:
@@ -35,9 +35,9 @@ class Drone:
         # # Publishers (only one drone topic needed for each one)
 
         # wait for services
-        activate_planner_url = drone_ns + "/mission_planner_ros/activate_planner"
-        add_waypoint_url     = drone_ns + "/mission_planner_ros/add_waypoint"
-        clear_waypoints_url  = drone_ns + "/mission_planner_ros/clear_waypoints"
+        activate_planner_url = drone_ns + "/trajectory_planner_ros/activate_planner"
+        add_waypoint_url     = drone_ns + "/trajectory_planner_ros/add_waypoint"
+        clear_waypoints_url  = drone_ns + "/trajectory_planner_ros/clear_waypoints"
         take_off_url   = drone_ns + "/ual/take_off"
 
         rospy.wait_for_service(activate_planner_url)
@@ -190,6 +190,7 @@ if __name__ == "__main__":
     rospy.init_node("operator", anonymous=True)
 
     drone = Drone("drone_1")
+    print("hi")
     #menu mode
     while (not rospy.is_shutdown()):
         show_menu(drone)            

@@ -73,3 +73,13 @@ target_link_libraries(${PROJECT_NAME}
   yaml-cpp
   ${ACADO_SHARED_LIBRARIES}
 )
+
+add_executable(${PROJECT_NAME}_node test/main.cpp src/trajectory_planner_ros.cpp )
+target_link_libraries(${PROJECT_NAME}_node
+  ${catkin_LIBRARIES}
+  yaml-cpp
+  ${ACADO_SHARED_LIBRARIES}
+  ${PROJECT_NAME}
+)
+
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
