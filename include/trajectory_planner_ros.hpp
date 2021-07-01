@@ -46,6 +46,7 @@ class TrajectoryPlannerRos {
   std::map<int, ros::Subscriber> cur_pose_sub_;
   std::map<int, ros::Subscriber> cur_vel_sub_;
   std::map<int, ros::Subscriber> solved_trajectories_sub_;
+  std::map<int, ros::Subscriber> pcd_sub_;
 
   // Publishers
   ros::Publisher points_pub_;
@@ -112,6 +113,8 @@ class TrajectoryPlannerRos {
    **/
   void uavVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr &msg,
                            int id);
+
+  void pcdCallback(const sensor_msgs::PointCloud2::ConstPtr &msg, int id);
 
   /*! \brief function to publish last solved trajectory
    */
