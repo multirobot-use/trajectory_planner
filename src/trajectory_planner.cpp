@@ -2,15 +2,39 @@
 
 using namespace trajectory_planner;
 
-TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
+TrajectoryPlanner::TrajectoryPlanner(const parameters _param, boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> _pcl_cloud_ptr)
     : param_(_param),
       my_grid_(0.0, (param_.horizon_length - 1) * param_.step_size,
-               param_.horizon_length) {
+               param_.horizon_length),
+      pcl_cloud_ptr_(_pcl_cloud_ptr) {
   // initialize solved trajectory
   solved_trajectories_[param_.drone_id] =
       std::vector<state>(_param.horizon_length);
   // initialize logger
   logger_ = std::make_unique<Logger>(param_.drone_id);
+
+  std::string         world_frame ="map";
+  double              main_loop_rate;
+  double              segment_margin = 0.0;
+  std::vector<double> _local_bbox{0,0,0};
+  std::vector<float>  _map_frame_coordinates{0,0,0};
+  double size_x{140};
+  double size_y{140};
+  double size_z{50};
+  double min_z{0.0};
+  double max_z{50};
+  double jps_inflation{1.2};
+  double map_resolution{0.25};
+  double decompose_inflation{1.00};
+  bool                test_                 = false;
+  double              max_sampling_distance{0.3};
+  int                 max_jps_expansions {500};
+
+  
+  safe_corridor_generator_ = std::make_shared<safe_corridor_generator::SafeCorridorGenerator>();
+
+  safe_corridor_generator_->initialize(world_frame, decompose_inflation, segment_margin, _local_bbox, size_x, size_y, size_z, max_z, min_z, _map_frame_coordinates, jps_inflation, map_resolution, max_sampling_distance, max_jps_expansions);
+
 }
 
 TrajectoryPlanner::TrajectoryPlanner() : 

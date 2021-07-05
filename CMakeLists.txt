@@ -25,7 +25,18 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
   trajectory_msgs
+  safe_corridor_generator
+  decomp_ros_utils
+  pcl_ros
+	pcl_conversions
 )
+
+find_package(decomp_util REQUIRED)
+include_directories(${DECOMP_UTIL_INCLUDE_DIRS})
+
+find_package(jps3d REQUIRED)
+include_directories(${JPS3D_INCLUDE_DIRS})
+
 
 add_service_files(
   FILES
@@ -62,9 +73,15 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
+  ${safe_corridor_generator_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+
 )
 add_library(${PROJECT_NAME} src/trajectory_planner.cpp include/trajectory_planner_types.hpp include/log.h)
+
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 #either from message generation or dynamic reconfigure
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -72,6 +89,10 @@ target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   yaml-cpp
   ${ACADO_SHARED_LIBRARIES}
+  ${JPS3D_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ${DECOMP_UTIL_LIBRARIES}
+
 )
 
 add_executable(${PROJECT_NAME}_node test/main.cpp src/trajectory_planner_ros.cpp )

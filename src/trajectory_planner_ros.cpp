@@ -3,7 +3,8 @@
 using namespace trajectory_planner;
 
 TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh)
-    : nh_(_nh) {
+    : nh_(_nh),
+      pcl_cloud_ptr_(boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>()) {
   // ros params
   safeGetParam(nh_, "horizon_length", param_.horizon_length);
   safeGetParam(nh_, "n_drones", param_.n_drones);
@@ -15,7 +16,7 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh)
   safeGetParam(nh_, "frame", param_.frame);
   safeGetParam(nh_, "drone_id", param_.drone_id);
 
-  trajectory_planner_ptr_ = std::make_unique<TrajectoryPlanner>(param_);
+  trajectory_planner_ptr_ = std::make_unique<TrajectoryPlanner>(param_, pcl_cloud_ptr_);
 
 
   // Subscribers
@@ -69,7 +70,8 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh)
   clear_waypoints = nh_.advertiseService(
       "clear_waypoints", &TrajectoryPlannerRos::clearWaypointsServiceCallback,
       this);
-}
+
+  }
 
 TrajectoryPlannerRos::~TrajectoryPlannerRos() {}
 
@@ -177,6 +179,7 @@ void TrajectoryPlannerRos::uavPoseCallback(
 
 void TrajectoryPlannerRos::pcdCallback(
     const sensor_msgs::PointCloud2::ConstPtr &msg) {
+    pcl::fromROSMsg(*msg,*pcl_cloud_ptr_);
 }
 
 void TrajectoryPlannerRos::uavVelocityCallback(

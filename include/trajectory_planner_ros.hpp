@@ -42,6 +42,9 @@ class TrajectoryPlannerRos {
 
   std::vector<geometry_msgs::Point> points_;
 
+  boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> pcl_cloud_ptr_;
+
+
   // Subscriptions
   std::map<int, ros::Subscriber> cur_pose_sub_;
   std::map<int, ros::Subscriber> cur_vel_sub_;

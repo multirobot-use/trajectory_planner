@@ -8,6 +8,8 @@
 #include <map>
 #include "log.h"
 #include "trajectory_planner_types.hpp"
+#include <safe_corridor_generator/safe_corridor_generator.h>
+
 
 namespace trajectory_planner {
 
@@ -25,6 +27,8 @@ class TrajectoryPlanner {
   std::vector<state> reference_traj;
   std::map<int, state> states_;
 
+  boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> pcl_cloud_ptr_;
+  std::shared_ptr<safe_corridor_generator::SafeCorridorGenerator>  safe_corridor_generator_;
   /**
    * @brief default constructor
    * 
@@ -33,7 +37,7 @@ class TrajectoryPlanner {
   /**
    * @brief constructor of the class
    */
-  TrajectoryPlanner(const parameters _param);
+  TrajectoryPlanner(const parameters _param, boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> _pcl_cloud_ptr);
 
   /**
    * @brief destructor of the class
