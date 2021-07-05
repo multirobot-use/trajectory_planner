@@ -47,9 +47,18 @@ TrajectoryPlanner::TrajectoryPlanner() :
 TrajectoryPlanner::~TrajectoryPlanner() {}
 
 void TrajectoryPlanner::plan() {
-  if (!hasGoal()) planner_state_ = PlannerStatus::FIRST_PLAN;
+  if (!hasGoal()){
+    planner_state_ = PlannerStatus::FIRST_PLAN;
+    std::cout<<"there's no goals"<<std::endl;
+    return;
+  }
 
   if (!checks()) return;
+
+  const std::vector<float> my_pose{float(states_[param_.drone_id].pos.x()),
+                          float(states_[param_.drone_id].pos.y()),
+                          float(states_[param_.drone_id].pos.z())};
+  safe_corridor_generator_->updateMaps(pcl_cloud_ptr_, my_pose);
 
   reference_traj.clear();
   state initial_pose;
