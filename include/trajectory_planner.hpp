@@ -9,6 +9,7 @@
 #include "log.h"
 #include "trajectory_planner_types.hpp"
 #include <safe_corridor_generator/safe_corridor_generator.h>
+#include <mutex>
 
 
 namespace trajectory_planner {
@@ -43,6 +44,12 @@ class TrajectoryPlanner {
    * @brief destructor of the class
    */
   virtual ~TrajectoryPlanner();
+
+  /**
+   * @brief Update map using safe corridor generator library
+   * 
+   */
+  void updateMap(boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> _pcd_input);
 
   /**
    * @brief pushes back a new goal on the vector of goal points to reach
@@ -105,7 +112,6 @@ class TrajectoryPlanner {
     solved_trajectories_[_drone_id] = solved_trajectory;
   }
 
-
  protected:
   const parameters param_;
   ACADO::Grid my_grid_;
@@ -114,6 +120,8 @@ class TrajectoryPlanner {
   Eigen::Vector3d init_point_;
   std::map<int, std::vector<state>> solved_trajectories_;
   int planner_state_ = PlannerStatus::FIRST_PLAN;
+
+  std::mutex mtx_jps_map_;
 
   /**
    * @brief Calculate a path from one point to another at cte velocity
@@ -172,6 +180,8 @@ class TrajectoryPlanner {
   }
 
  private:
+
+  std::chrono::time_point<std::chrono::steady_clock> start_time_cycle_;
   const float REACH_TOL = 1;  //! tolerance to reach waypoints
 
   /**

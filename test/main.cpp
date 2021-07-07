@@ -7,6 +7,10 @@ int main(int argc, char **argv) {
 
   trajectory_planner::TrajectoryPlannerRos TrajectoryPlannerRos(nh);
 
+  ros::AsyncSpinner async_spinner{2, &TrajectoryPlannerRos.pcd_queue_};
+
+  async_spinner.start();
+
   ros::spin();
   return 0;
 }

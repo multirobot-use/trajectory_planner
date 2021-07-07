@@ -14,7 +14,7 @@
 #include <visualization_msgs/Marker.h>
 #include "ros/ros.h"
 #include <trajectory_planner.hpp>
-
+#include <ros/callback_queue.h>
 namespace trajectory_planner {
 
 enum Colors { RED = 0, BLUE = 2, YELLOW = 3 };
@@ -31,6 +31,10 @@ class TrajectoryPlannerRos {
 
   //! TrajectoryPlannerRos destructor
   ~TrajectoryPlannerRos();
+
+  // queues
+  ros::CallbackQueue pcd_queue_;
+
 
  private:
   // Declarations
@@ -63,6 +67,7 @@ class TrajectoryPlannerRos {
   ros::ServiceServer service_activate_planner;
   ros::ServiceServer service_waypoint;
   ros::ServiceServer clear_waypoints;
+
 
   //! Callback prototypes
 

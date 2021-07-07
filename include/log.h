@@ -34,6 +34,13 @@ class Logger {
     file_ << elapsed_seconds.count() << " " << name << ": " << obj << std::endl;
   }
 
+  void log(const std::chrono::time_point<std::chrono::steady_clock> &_start_time, const std::string& name = "" ){
+    auto final_time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = final_time - initial_time;
+    std::chrono::duration<double> log_time = final_time - _start_time;
+    file_ << elapsed_seconds.count() << " " << name << ": " <<log_time.count()<< std::endl;
+  }
+
   void log(std::vector<state> trajectory, const std::string &name = "") {
     auto final_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = final_time - initial_time;

@@ -18,11 +18,11 @@ TrajectoryPlanner::TrajectoryPlanner(const parameters _param, boost::shared_ptr<
   double              segment_margin = 0.0;
   std::vector<double> _local_bbox{0,0,0};
   std::vector<float>  _map_frame_coordinates{0,0,0};
-  double size_x{140};
-  double size_y{140};
-  double size_z{50};
+  double size_x{50};
+  double size_y{50};
+  double size_z{20};
   double min_z{0.0};
-  double max_z{50};
+  double max_z{20};
   double jps_inflation{1.2};
   double map_resolution{0.25};
   double decompose_inflation{1.00};
@@ -47,6 +47,9 @@ TrajectoryPlanner::TrajectoryPlanner() :
 TrajectoryPlanner::~TrajectoryPlanner() {}
 
 void TrajectoryPlanner::plan() {
+  auto start_time = std::chrono::steady_clock::now();
+  logger_->log(start_time_cycle_, "plan cycle");
+  start_time_cycle_ = std::chrono::steady_clock::now();
   if (!hasGoal()){
     planner_state_ = PlannerStatus::FIRST_PLAN;
     std::cout<<"there's no goals"<<std::endl;
@@ -54,11 +57,6 @@ void TrajectoryPlanner::plan() {
   }
 
   if (!checks()) return;
-
-  const std::vector<float> my_pose{float(states_[param_.drone_id].pos.x()),
-                          float(states_[param_.drone_id].pos.y()),
-                          float(states_[param_.drone_id].pos.z())};
-  safe_corridor_generator_->updateMaps(pcl_cloud_ptr_, my_pose);
 
   reference_traj.clear();
   state initial_pose;
@@ -96,8 +94,21 @@ void TrajectoryPlanner::plan() {
   initialOrientation(solved_trajectories_[param_.drone_id]);
 
   planner_state_ = PlannerStatus::REPLANNED;
+  logger_->log(start_time, "solving cycle");
+
 }
 
+void TrajectoryPlanner::updateMap(boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> _pcd_input){
+  auto start_time = std::chrono::steady_clock::now();
+  const std::vector<float> my_pose{float(states_[param_.drone_id].pos.x()),
+                          float(states_[param_.drone_id].pos.y()),
+                          float(states_[param_.drone_id].pos.z())};
+  pcl_cloud_ptr_ = _pcd_input;
+  mtx_jps_map_.lock();
+  safe_corridor_generator_->updateMaps(_pcd_input, my_pose);
+  mtx_jps_map_.unlock();
+  logger_->log(start_time, "update maps time");
+}
 
 void TrajectoryPlanner::optimalOrientation(
     const std::vector<state> &traj_to_optimize) {

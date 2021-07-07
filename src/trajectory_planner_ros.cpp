@@ -41,9 +41,19 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh)
     }
   }
 
-  pcd_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
-        "/drone_" + std::to_string(param_.drone_id) + "/os1_cloud_node/points", 1, &TrajectoryPlannerRos::pcdCallback, this, ros::TransportHints().tcpNoDelay());
 
+  ros::SubscribeOptions ops =
+  ros::SubscribeOptions::create<sensor_msgs::PointCloud2>(
+      "/drone_" + std::to_string(param_.drone_id) + "/os1_cloud_node/points", // topic name
+      1, // queue length
+     boost::bind(&TrajectoryPlannerRos::pcdCallback, this, _1),
+     ros::VoidPtr(), 
+      &this->pcd_queue_ // pointer to callback queue object
+    );
+  ops.transport_hints = ros::TransportHints().tcpNoDelay();
+  
+  pcd_sub_ = nh_.subscribe(ops);
+ 
   // create timer
   planTimer_ = nh_.createTimer(ros::Duration(param_.planning_rate),
                                &TrajectoryPlannerRos::replanCB, this);
@@ -180,6 +190,7 @@ void TrajectoryPlannerRos::uavPoseCallback(
 void TrajectoryPlannerRos::pcdCallback(
     const sensor_msgs::PointCloud2::ConstPtr &msg) {
     pcl::fromROSMsg(*msg,*pcl_cloud_ptr_);
+    trajectory_planner_ptr_->updateMap(pcl_cloud_ptr_);
 }
 
 void TrajectoryPlannerRos::uavVelocityCallback(
