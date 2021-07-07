@@ -53,6 +53,9 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh)
   ops.transport_hints = ros::TransportHints().tcpNoDelay();
   
   pcd_sub_ = nh_.subscribe(ops);
+
+  async_spinner_.start();
+
  
   // create timer
   planTimer_ = nh_.createTimer(ros::Duration(param_.planning_rate),

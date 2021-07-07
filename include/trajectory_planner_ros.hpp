@@ -32,9 +32,6 @@ class TrajectoryPlannerRos {
   //! TrajectoryPlannerRos destructor
   ~TrajectoryPlannerRos();
 
-  // queues
-  ros::CallbackQueue pcd_queue_;
-
 
  private:
   // Declarations
@@ -68,6 +65,9 @@ class TrajectoryPlannerRos {
   ros::ServiceServer service_waypoint;
   ros::ServiceServer clear_waypoints;
 
+  // queues
+  ros::CallbackQueue pcd_queue_;
+  ros::AsyncSpinner async_spinner_{2, &pcd_queue_};
 
   //! Callback prototypes
 
