@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ros/ros.h"
+#include <nav_msgs/Path.h>
 
 namespace trajectory_planner{
 
@@ -64,6 +65,18 @@ inline Eigen::Vector3d rotateEig(const Eigen::Vector3d &eigen_to_rotate,
   Eigen::Quaterniond rotation = eulerToQuat(0, 0, angle);
   Eigen::Matrix3d rotMat = rotation.toRotationMatrix();
   return rotMat * eigen_to_rotate;
+}
+
+inline boost::shared_ptr<nav_msgs::Path> vectorToPath(const std::vector<state> &initial_path){
+  nav_msgs::PathPtr initial_path_ptr = boost::make_shared<nav_msgs::Path>();
+  geometry_msgs::PoseStamped aux;
+  for(auto state : initial_path){
+    aux.pose.position.x = state.pos.x();
+    aux.pose.position.y = state.pos.y();
+    aux.pose.position.z = state.pos.z();
+    initial_path_ptr->poses.push_back(aux);
+  }
+  return initial_path_ptr;
 }
 
 }

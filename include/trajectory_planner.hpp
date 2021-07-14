@@ -38,7 +38,7 @@ class TrajectoryPlanner {
   /**
    * @brief constructor of the class
    */
-  TrajectoryPlanner(const parameters _param, boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> _pcl_cloud_ptr);
+  TrajectoryPlanner(const parameters _param);
 
   /**
    * @brief destructor of the class

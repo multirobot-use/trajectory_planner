@@ -15,6 +15,10 @@
 #include "ros/ros.h"
 #include <trajectory_planner.hpp>
 #include <ros/callback_queue.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_eigen/tf2_eigen.h>
+#include <pcl/common/transforms.h>
+
 namespace trajectory_planner {
 
 enum Colors { RED = 0, BLUE = 2, YELLOW = 3 };
@@ -43,9 +47,6 @@ class TrajectoryPlannerRos {
 
   std::vector<geometry_msgs::Point> points_;
 
-  boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> pcl_cloud_ptr_;
-
-
   // Subscriptions
   std::map<int, ros::Subscriber> cur_pose_sub_;
   std::map<int, ros::Subscriber> cur_vel_sub_;
@@ -59,7 +60,8 @@ class TrajectoryPlannerRos {
   ros::Publisher pub_ref_path_;
   ros::Publisher tracking_pub_;
   ros::Publisher tracking_pub_trajectory_;
-
+  ros::Publisher corridor_pub_;
+  ros::Publisher pub_point_cloud_;
   // Services
   ros::ServiceServer service_activate_planner;
   ros::ServiceServer service_waypoint;
@@ -68,6 +70,10 @@ class TrajectoryPlannerRos {
   // queues
   ros::CallbackQueue pcd_queue_;
   ros::AsyncSpinner async_spinner_{2, &pcd_queue_};
+
+  tf2_ros::Buffer tfBuffer;
+  std::unique_ptr<tf2_ros::TransformListener> tfListener_;    
+
 
   //! Callback prototypes
 

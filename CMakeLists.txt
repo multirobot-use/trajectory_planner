@@ -29,6 +29,7 @@ find_package(catkin REQUIRED COMPONENTS
   decomp_ros_utils
   pcl_ros
 	pcl_conversions
+  tf2
 )
 
 find_package(decomp_util REQUIRED)

@@ -28,7 +28,7 @@
     </node>
     
     <!-- Launch trajectory_planner_node -->
-    <node pkg="trajectory_planner" type="trajectory_planner_node" name="trajectory_planner_ros" output="screen" ns="drone_$(arg drone_id)" launch-prefix="">
+    <node pkg="trajectory_planner" type="trajectory_planner_node" name="trajectory_planner_ros" output="screen" ns="drone_$(arg drone_id)">
         <rosparam file="$(find trajectory_planner)/test/param.yml" command="load"/>
         <param name="drone_id" value="$(arg drone_id)"/>
     </node>
@@ -36,6 +36,8 @@
     <node pkg = "trajectory_follower" name = "trajectory_follower_node" type = "trajectory_follower_node" ns="drone_$(arg drone_id)" >
         <param name="drone_id" value="$(arg drone_id)"/>
     </node>    
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="static_transformation_node" args="0 0 0 3.14 0 0 drone_1/base_link drone_1/velodyne"></node>
 
     <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find trajectory_planner)/test/rviz.rviz">
     </node>    

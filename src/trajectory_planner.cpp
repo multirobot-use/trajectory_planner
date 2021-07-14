@@ -1,23 +1,24 @@
 #include "trajectory_planner.hpp"
+#include <pcl/common/transforms.h>
 
 using namespace trajectory_planner;
 
-TrajectoryPlanner::TrajectoryPlanner(const parameters _param, boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> _pcl_cloud_ptr)
+TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
     : param_(_param),
       my_grid_(0.0, (param_.horizon_length - 1) * param_.step_size,
                param_.horizon_length),
-      pcl_cloud_ptr_(_pcl_cloud_ptr) {
+      pcl_cloud_ptr_(new pcl::PointCloud<pcl::PointXYZ>()) {
   // initialize solved trajectory
   solved_trajectories_[param_.drone_id] =
       std::vector<state>(_param.horizon_length);
   // initialize logger
   logger_ = std::make_unique<Logger>(param_.drone_id);
 
-  std::string         world_frame ="map";
-  double              main_loop_rate;
-  double              segment_margin = 0.0;
-  std::vector<double> _local_bbox{0,0,0};
-  std::vector<float>  _map_frame_coordinates{0,0,0};
+  std::string world_frame = "map";
+  double main_loop_rate;
+  double segment_margin = 0.0;
+  std::vector<double> _local_bbox{2.0, 2.0, 2.0};
+  std::vector<float> _map_frame_coordinates{0, 0, 0};
   double size_x{50};
   double size_y{50};
   double size_z{20};
@@ -26,21 +27,23 @@ TrajectoryPlanner::TrajectoryPlanner(const parameters _param, boost::shared_ptr<
   double jps_inflation{1.2};
   double map_resolution{0.25};
   double decompose_inflation{1.00};
-  bool                test_                 = false;
-  double              max_sampling_distance{0.3};
-  int                 max_jps_expansions {500};
+  bool test_ = false;
+  double max_sampling_distance{0.3};
+  int max_jps_expansions{500};
 
-  
-  safe_corridor_generator_ = std::make_shared<safe_corridor_generator::SafeCorridorGenerator>();
+  safe_corridor_generator_ =
+      std::make_shared<safe_corridor_generator::SafeCorridorGenerator>();
 
-  safe_corridor_generator_->initialize(world_frame, decompose_inflation, segment_margin, _local_bbox, size_x, size_y, size_z, max_z, min_z, _map_frame_coordinates, jps_inflation, map_resolution, max_sampling_distance, max_jps_expansions);
-
+  safe_corridor_generator_->initialize(
+      world_frame, decompose_inflation, segment_margin, _local_bbox, size_x,
+      size_y, size_z, max_z, min_z, _map_frame_coordinates, jps_inflation,
+      map_resolution, max_sampling_distance, max_jps_expansions);
 }
 
-TrajectoryPlanner::TrajectoryPlanner() : 
-      my_grid_(0.0, (param_.horizon_length - 1) * param_.step_size,
-               param_.horizon_length){
-    // initialize logger
+TrajectoryPlanner::TrajectoryPlanner()
+    : my_grid_(0.0, (param_.horizon_length - 1) * param_.step_size,
+               param_.horizon_length) {
+  // initialize logger
   logger_ = std::make_unique<Logger>(param_.drone_id);
 }
 
@@ -50,9 +53,9 @@ void TrajectoryPlanner::plan() {
   auto start_time = std::chrono::steady_clock::now();
   logger_->log(start_time_cycle_, "plan cycle");
   start_time_cycle_ = std::chrono::steady_clock::now();
-  if (!hasGoal()){
+  if (!hasGoal()) {
     planner_state_ = PlannerStatus::FIRST_PLAN;
-    std::cout<<"there's no goals"<<std::endl;
+    std::cout << "there's no goals" << std::endl;
     return;
   }
 
@@ -95,17 +98,18 @@ void TrajectoryPlanner::plan() {
 
   planner_state_ = PlannerStatus::REPLANNED;
   logger_->log(start_time, "solving cycle");
-
 }
 
-void TrajectoryPlanner::updateMap(boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> _pcd_input){
+void TrajectoryPlanner::updateMap(
+    boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> _pcd_input) {
   auto start_time = std::chrono::steady_clock::now();
   const std::vector<float> my_pose{float(states_[param_.drone_id].pos.x()),
-                          float(states_[param_.drone_id].pos.y()),
-                          float(states_[param_.drone_id].pos.z())};
+                                   float(states_[param_.drone_id].pos.y()),
+                                   float(states_[param_.drone_id].pos.z())};
+
   pcl_cloud_ptr_ = _pcd_input;
-  mtx_jps_map_.lock();
-  safe_corridor_generator_->updateMaps(_pcd_input, my_pose);
+
+  safe_corridor_generator_->updateMaps(pcl_cloud_ptr_, my_pose);
   mtx_jps_map_.unlock();
   logger_->log(start_time, "update maps time");
 }
@@ -237,7 +241,6 @@ bool TrajectoryPlanner::optimalTrajectory(
 
   ACADO::OCP ocp(my_grid_);
   ocp.subjectTo(model);
-
   ocp.subjectTo(-param_.acc_max <= ax_ <= param_.acc_max);
   ocp.subjectTo(-param_.acc_max <= ay_ <= param_.acc_max);
   ocp.subjectTo(-param_.acc_max <= az_ <= param_.acc_max);
@@ -254,6 +257,13 @@ bool TrajectoryPlanner::optimalTrajectory(
   ocp.subjectTo(ACADO::AT_START, ax_ == initial_trajectory[0].acc(0));
   ocp.subjectTo(ACADO::AT_START, ay_ == initial_trajectory[0].acc(1));
   ocp.subjectTo(ACADO::AT_START, az_ == initial_trajectory[0].acc(2));
+
+  // generate polyhedrons
+  mtx_jps_map_.lock();
+  vec_E<Polyhedron<3>> polyhedron_vector =
+      safe_corridor_generator_->getSafeCorridorPolyhedronVector(
+          vectorToPath(initial_trajectory));  // get polyhedrons
+  mtx_jps_map_.unlock();
 
   // setup reference trajectory
   ACADO::VariablesGrid reference_trajectory(6, my_grid_);
@@ -318,8 +328,8 @@ bool TrajectoryPlanner::optimalTrajectory(
   az_.clearStaticCounters();
 };
 
-int TrajectoryPlanner::closestPoint(const std::vector<state> &initial_trajectory,
-                                 const state point) {
+int TrajectoryPlanner::closestPoint(
+    const std::vector<state> &initial_trajectory, const state point) {
   float dist = INFINITY;
   float aux_dist = 0;
   int idx = 0;

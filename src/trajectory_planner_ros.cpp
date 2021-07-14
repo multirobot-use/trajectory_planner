@@ -2,9 +2,7 @@
 
 using namespace trajectory_planner;
 
-TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh)
-    : nh_(_nh),
-      pcl_cloud_ptr_(boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>()) {
+TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh) : nh_(_nh) {
   // ros params
   safeGetParam(nh_, "horizon_length", param_.horizon_length);
   safeGetParam(nh_, "n_drones", param_.n_drones);
@@ -16,8 +14,7 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh)
   safeGetParam(nh_, "frame", param_.frame);
   safeGetParam(nh_, "drone_id", param_.drone_id);
 
-  trajectory_planner_ptr_ = std::make_unique<TrajectoryPlanner>(param_, pcl_cloud_ptr_);
-
+  trajectory_planner_ptr_ = std::make_unique<TrajectoryPlanner>(param_);
 
   // Subscribers
   for (int drone = 1; drone <= param_.n_drones; drone++) {
@@ -41,28 +38,30 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh)
     }
   }
 
-
   ros::SubscribeOptions ops =
-  ros::SubscribeOptions::create<sensor_msgs::PointCloud2>(
-      "/drone_" + std::to_string(param_.drone_id) + "/os1_cloud_node/points", // topic name
-      1, // queue length
-     boost::bind(&TrajectoryPlannerRos::pcdCallback, this, _1),
-     ros::VoidPtr(), 
-      &this->pcd_queue_ // pointer to callback queue object
-    );
+      ros::SubscribeOptions::create<sensor_msgs::PointCloud2>(
+          "/drone_" + std::to_string(param_.drone_id) +
+              "/os1_cloud_node/points",  // topic name
+          1,                             // queue length
+          boost::bind(&TrajectoryPlannerRos::pcdCallback, this, _1),
+          ros::VoidPtr(),
+          &this->pcd_queue_  // pointer to callback queue object
+      );
   ops.transport_hints = ros::TransportHints().tcpNoDelay();
-  
+
   pcd_sub_ = nh_.subscribe(ops);
 
   async_spinner_.start();
 
- 
   // create timer
   planTimer_ = nh_.createTimer(ros::Duration(param_.planning_rate),
                                &TrajectoryPlannerRos::replanCB, this);
   planTimer_.stop();
 
   // publishers
+  corridor_pub_ =
+      nh_.advertise<decomp_ros_msgs::PolyhedronArray>("polyhedrons_out", 1);
+  pub_point_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>("pcl_map_out", 1);
   pub_path_ = nh_.advertise<nav_msgs::Path>("solved_traj", 1);
   pub_ref_path_ = nh_.advertise<nav_msgs::Path>("ref_traj", 1);
   tracking_pub_ = nh_.advertise<nav_msgs::Path>(
@@ -76,15 +75,16 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh)
 
   // Services
   service_activate_planner = nh_.advertiseService(
-      "activate_planner", &TrajectoryPlannerRos::activationPlannerServiceCallback,
-      this);
+      "activate_planner",
+      &TrajectoryPlannerRos::activationPlannerServiceCallback, this);
   service_waypoint = nh_.advertiseService(
       "add_waypoint", &TrajectoryPlannerRos::addWaypointServiceCallback, this);
   clear_waypoints = nh_.advertiseService(
       "clear_waypoints", &TrajectoryPlannerRos::clearWaypointsServiceCallback,
       this);
 
-  }
+  tfListener_ = std::make_unique<tf2_ros::TransformListener>(tfBuffer);
+}
 
 TrajectoryPlannerRos::~TrajectoryPlannerRos() {}
 
@@ -141,13 +141,17 @@ bool TrajectoryPlannerRos::clearWaypointsServiceCallback(
   trajectory_planner_ptr_->clearGoals();
 }
 
-
 void TrajectoryPlannerRos::replanCB(const ros::TimerEvent &e) {
   if (trajectory_planner_ptr_->getStatus() != PlannerStatus::FIRST_PLAN) {
     publishTrajectoryJoint(tracking_pub_trajectory_,
                            trajectory_planner_ptr_->getLastTrajectory());
     publishPath(pub_path_, trajectory_planner_ptr_->getLastTrajectory());
-    publishPath(pub_ref_path_, trajectory_planner_ptr_->getReferenceTrajectory());
+    publishPath(pub_ref_path_,
+                trajectory_planner_ptr_->getReferenceTrajectory());
+    trajectory_planner_ptr_->safe_corridor_generator_->publishCorridor(
+        corridor_pub_);
+    trajectory_planner_ptr_->safe_corridor_generator_->publishCloud(
+        pub_point_cloud_);
   }
   trajectory_planner_ptr_->plan();
 }
@@ -170,9 +174,8 @@ void TrajectoryPlannerRos::pubVisCB(const ros::TimerEvent &e) {
   }
 }
 
-
-void TrajectoryPlannerRos::solvedTrajCallback(const nav_msgs::Path::ConstPtr &msg,
-                                           int id) {
+void TrajectoryPlannerRos::solvedTrajCallback(
+    const nav_msgs::Path::ConstPtr &msg, int id) {
   state aux_state;
   std::vector<state> path;
   for (auto pose : msg->poses) {
@@ -188,12 +191,41 @@ void TrajectoryPlannerRos::uavPoseCallback(
   trajectory_planner_ptr_->states_[id].pos[0] = msg->pose.position.x;
   trajectory_planner_ptr_->states_[id].pos[1] = msg->pose.position.y;
   trajectory_planner_ptr_->states_[id].pos[2] = msg->pose.position.z;
+  trajectory_planner_ptr_->states_[id].orientation.x() =
+      msg->pose.orientation.x;
+  trajectory_planner_ptr_->states_[id].orientation.y() =
+      msg->pose.orientation.y;
+  trajectory_planner_ptr_->states_[id].orientation.z() =
+      msg->pose.orientation.z;
+  trajectory_planner_ptr_->states_[id].orientation.w() =
+      msg->pose.orientation.w;
 }
 
 void TrajectoryPlannerRos::pcdCallback(
     const sensor_msgs::PointCloud2::ConstPtr &msg) {
-    pcl::fromROSMsg(*msg,*pcl_cloud_ptr_);
-    trajectory_planner_ptr_->updateMap(pcl_cloud_ptr_);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_received(
+      new pcl::PointCloud<pcl::PointXYZ>());
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_transformed(
+      new pcl::PointCloud<pcl::PointXYZ>());
+
+  pcl::fromROSMsg(*msg, *pcl_cloud_received);
+
+  geometry_msgs::TransformStamped Tstatic_frame_velodyne_frame;
+  try {
+    Tstatic_frame_velodyne_frame = tfBuffer.lookupTransform(
+        "map", "drone_" + std::to_string(param_.drone_id) + "/velodyne",
+        ros::Time(0));
+  } catch (tf2::TransformException ex) {
+    ROS_ERROR("%s", ex.what());
+    return;
+  }
+  Eigen::Affine3d transformation =
+      tf2::transformToEigen(Tstatic_frame_velodyne_frame);
+
+  pcl::transformPointCloud(*pcl_cloud_received, *pcl_cloud_transformed,
+                           transformation);
+
+  trajectory_planner_ptr_->updateMap(pcl_cloud_transformed);
 }
 
 void TrajectoryPlannerRos::uavVelocityCallback(
@@ -204,7 +236,7 @@ void TrajectoryPlannerRos::uavVelocityCallback(
 }
 
 void TrajectoryPlannerRos::setMarkerColor(visualization_msgs::Marker &marker,
-                                       const Colors &color) {
+                                          const Colors &color) {
   switch (color) {
     case Colors::RED:
       marker.color.r = 1.0;
@@ -252,7 +284,7 @@ void TrajectoryPlannerRos::publishPoints(
 }
 
 void TrajectoryPlannerRos::publishPath(const ros::Publisher &pub_path,
-                                    const std::vector<state> &trajectory) {
+                                       const std::vector<state> &trajectory) {
   nav_msgs::Path path_to_publish;
   geometry_msgs::PoseStamped aux_pose;
   path_to_publish.header.frame_id = param_.frame;
