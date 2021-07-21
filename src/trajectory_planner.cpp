@@ -88,6 +88,7 @@ void TrajectoryPlanner::plan() {
       return;
     }
     // calculate optimal trajectory
+    lastPointOccupied(reference_traj);
     bool solver_success = optimalTrajectory(reference_traj);
     if (solver_success != 0) {
       logger_->log(solver_success, "Error solving the ocp: ");
@@ -264,7 +265,25 @@ bool TrajectoryPlanner::optimalTrajectory(
       safe_corridor_generator_->getSafeCorridorPolyhedronVector(
           vectorToPath(initial_trajectory));  // get polyhedrons
   mtx_jps_map_.unlock();
+  // get JPS path along which the polyhedrons were generated - needed to
+  // generation of correct constraints
+  nav_msgs::PathPtr collision_free_path =
+      safe_corridor_generator_->getLastPath();
 
+  std::vector<Eigen::Vector3f> collision_free_path_vector;
+
+  for (int i = 0; i < collision_free_path->poses.size();
+       i++) {  // nav_msgs to eigen vector
+    collision_free_path_vector.push_back(
+        Eigen::Vector3f(collision_free_path->poses[i].pose.position.x,
+              collision_free_path->poses[i].pose.position.y,
+              collision_free_path->poses[i].pose.position.z));
+    std::cout << "x: " << collision_free_path->poses[i].pose.position.x
+              << " y: " << collision_free_path->poses[i].pose.position.y
+              << " z: " << collision_free_path->poses[i].pose.position.z
+              << std::endl;
+  }
+  polyhedronsToACADO(ocp, polyhedron_vector, collision_free_path_vector, px_, py_, pz_);
   // setup reference trajectory
   ACADO::VariablesGrid reference_trajectory(6, my_grid_);
   ACADO::DVector reference_point(6);
@@ -290,7 +309,6 @@ bool TrajectoryPlanner::optimalTrajectory(
   ocp.minimizeLSQ(S, rf, reference_trajectory);
 
   ACADO::OptimizationAlgorithm solver(ocp);
-
   solver.set(ACADO::MAX_TIME, 2.0);  // TODO: have it as parameter
   // solver.set(ACADO::PRINT_INTEGRATOR_PROFILE, false);
   // solver.set(ACADO::CONIC_SOLVER_PRINT_LEVEL, ACADO::NONE);
@@ -344,4 +362,59 @@ int TrajectoryPlanner::closestPoint(
     }
   }
   return idx;
+}
+void TrajectoryPlanner::polyhedronsToACADO(
+    ACADO::OCP &_ocp, const vec_E<Polyhedron<3>> &_vector_of_polyhedrons,
+    const std::vector<Eigen::Vector3d> &path_free, ACADO::DifferentialState &_px,
+    ACADO::DifferentialState &_py, ACADO::DifferentialState &_pz) {
+  // Convert to inequality constraints Ax < b
+  // Taken from decomp test node
+  ROS_INFO("[Acado]: polyhedrons to acado ");
+
+  for (size_t i = 0; i < path_free.size() - 1; i++) {
+    ROS_INFO(
+        "[Acado]: polyhedrons to acado - iter i = %lu, initial path size = "
+        "%lu, polyhedrons size =%lu ",
+        i, path_free.size(), _vector_of_polyhedrons.size());
+    const auto pt_inside = path_free[i + 1];
+
+    LinearConstraint3D cs(pt_inside, _vector_of_polyhedrons[i].hyperplanes());
+    for (size_t k = 0; k < cs.b().size();
+         k++) {  // each polyhedron i is subject to k constraints
+      ROS_INFO("[Acado]: polyhedrons to acado - iter k = %lu ", k);
+      if (!std::isnan(cs.A()(k, 0)) && !std::isnan(cs.A()(k, 1)) &&
+          !std::isnan(cs.A()(k, 2)) && !std::isnan(cs.b()[k])) {
+        _ocp.subjectTo(i + 1, cs.A()(k, 0) * _px + cs.A()(k, 1) * _py +
+                                      cs.A()(k, 2) * _pz <=
+                                  cs.b()[k]);
+      } else {
+        ROS_ERROR("[Acado]: NaNs detected in polyhedrons ");
+      }
+      ROS_INFO(
+          "[Acado]: Adding constraint: %.2f * px + %.2f * py + %.2f * pz <= "
+          "%.2f",
+          cs.A()(k, 0), cs.A()(k, 1), cs.A()(k, 2), cs.b()[k]);
+      ROS_INFO("[Acado]: Point: [%.2f, %.2f, %.2f], result = %.2f",
+               pt_inside(0), pt_inside(1), pt_inside(2),
+               cs.A()(k, 0) * pt_inside(0) + cs.A()(k, 1) * pt_inside(1) +
+                   cs.A()(k, 2) * pt_inside(2));
+    }
+  }
+}
+
+// change to free last point
+void TrajectoryPlanner::lastPointOccupied(
+    std::vector<state> &_initial_trajectory) {
+  if (safe_corridor_generator_->isPointOccupied(
+          _initial_trajectory.back().pos)) {
+    Eigen::Vector3d last_point = _initial_trajectory.back().pos;
+    const Eigen::Vector3d first_point = _initial_trajectory[0].pos;
+    const Eigen::Vector3d point_dir = (last_point - first_point).normalized();
+    while (safe_corridor_generator_->isPointOccupied(last_point)) {
+      last_point = last_point + point_dir;
+    }
+    state aux_state;
+    aux_state.pos = last_point;
+    _initial_trajectory.back() = aux_state;
+  }
 }

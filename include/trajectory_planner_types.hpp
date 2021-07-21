@@ -4,7 +4,6 @@
 #include <nav_msgs/Path.h>
 
 namespace trajectory_planner{
-
 struct parameters {
   float horizon_length = 40;        // number of steps
   int n_drones = 1;                // number of drones
@@ -78,5 +77,16 @@ inline boost::shared_ptr<nav_msgs::Path> vectorToPath(const std::vector<state> &
   }
   return initial_path_ptr;
 }
-
 }
+// inline std::vector<Eigen::Vector3f> stateVectorToEigenf(const std::vector<state> &_initial_path){
+//   std::vector<Eigen::Vector3f> path_to_return;
+//   Eigen::Vector3f aux_pose;
+//   for(auto &&state : _initial_path){
+//     aux_pose[0] = state.pos[0];
+//     aux_pose[1] = state.pos[1];
+//     aux_pose[2] = state.pos[2];
+//     path_to_return.push_back(aux_pose);
+//   }
+//   return path_to_return;
+// }
+// }

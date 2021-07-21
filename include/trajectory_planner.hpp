@@ -245,6 +245,9 @@ class TrajectoryPlanner {
    */
   int closestPoint(const std::vector<state> &initial_trajectory,
                    const state point);
+  void polyhedronsToACADO(ACADO::OCP &_ocp, const vec_E<Polyhedron<3>> &_vector_of_polyhedrons, const std::vector<Eigen::Vector3d> &path_free, ACADO::DifferentialState &_px, ACADO::DifferentialState &_py, ACADO::DifferentialState &_pz);
+
+  void lastPointOccupied(std::vector<state> &_initial_trajectory);
 };
 
 }
