@@ -13,6 +13,8 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh) : nh_(_nh) {
   safeGetParam(nh_, "acc_max", param_.acc_max);
   safeGetParam(nh_, "frame", param_.frame);
   safeGetParam(nh_, "drone_id", param_.drone_id);
+  safeGetParam(nh_,"pcl_filepath", param_.pcd_file_path);
+
 
   trajectory_planner_ptr_ = std::make_unique<TrajectoryPlanner>(param_);
 
@@ -38,18 +40,18 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh) : nh_(_nh) {
     }
   }
 
-  ros::SubscribeOptions ops =
-      ros::SubscribeOptions::create<sensor_msgs::PointCloud2>(
-          "/drone_" + std::to_string(param_.drone_id) +
-              "/os1_cloud_node/points",  // topic name
-          1,                             // queue length
-          boost::bind(&TrajectoryPlannerRos::pcdCallback, this, _1),
-          ros::VoidPtr(),
-          &this->pcd_queue_  // pointer to callback queue object
-      );
-  ops.transport_hints = ros::TransportHints().tcpNoDelay();
+  // ros::SubscribeOptions ops =
+  //     ros::SubscribeOptions::create<sensor_msgs::PointCloud2>(
+  //         "/drone_" + std::to_string(param_.drone_id) +
+  //             "/os1_cloud_node/points",  // topic name
+  //         1,                             // queue length
+  //         boost::bind(&TrajectoryPlannerRos::pcdCallback, this, _1),
+  //         ros::VoidPtr(),
+  //         &this->pcd_queue_  // pointer to callback queue object
+  //     );
+  // ops.transport_hints = ros::TransportHints().tcpNoDelay();
 
-  pcd_sub_ = nh_.subscribe(ops);
+  // pcd_sub_ = nh_.subscribe(ops);
 
   async_spinner_.start();
 
@@ -152,6 +154,7 @@ void TrajectoryPlannerRos::replanCB(const ros::TimerEvent &e) {
         corridor_pub_);
     trajectory_planner_ptr_->safe_corridor_generator_->publishCloud(
         pub_point_cloud_);
+    trajectory_planner_ptr_->safe_corridor_generator_->updateMaps();
   }
   trajectory_planner_ptr_->plan();
 }

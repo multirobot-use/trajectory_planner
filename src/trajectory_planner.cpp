@@ -19,25 +19,27 @@ TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
   double segment_margin = 0.0;
   std::vector<double> _local_bbox{2.0, 2.0, 2.0};
   std::vector<float> _map_frame_coordinates{0, 0, 0};
-  double size_x{50};
-  double size_y{50};
-  double size_z{20};
+  double size_x{140};
+  double size_y{140};
+  double size_z{140};
   double min_z{0.0};
-  double max_z{20};
+  double max_z{50};
   double jps_inflation{1.2};
   double map_resolution{0.25};
   double decompose_inflation{1.00};
   bool test_ = false;
   double max_sampling_distance{0.3};
-  int max_jps_expansions{500};
+  int max_jps_expansions{100};
 
   safe_corridor_generator_ =
       std::make_shared<safe_corridor_generator::SafeCorridorGenerator>();
 
-  safe_corridor_generator_->initialize(
+  safe_corridor_generator_->initialize(param_.pcd_file_path,
       world_frame, decompose_inflation, segment_margin, _local_bbox, size_x,
       size_y, size_z, max_z, min_z, _map_frame_coordinates, jps_inflation,
       map_resolution, max_sampling_distance, max_jps_expansions);
+
+  safe_corridor_generator_->updateMaps();
 }
 
 TrajectoryPlanner::TrajectoryPlanner()
@@ -270,12 +272,12 @@ bool TrajectoryPlanner::optimalTrajectory(
   nav_msgs::PathPtr collision_free_path =
       safe_corridor_generator_->getLastPath();
 
-  std::vector<Eigen::Vector3f> collision_free_path_vector;
+  std::vector<Eigen::Vector3d> collision_free_path_vector;
 
   for (int i = 0; i < collision_free_path->poses.size();
        i++) {  // nav_msgs to eigen vector
     collision_free_path_vector.push_back(
-        Eigen::Vector3f(collision_free_path->poses[i].pose.position.x,
+        Eigen::Vector3d(collision_free_path->poses[i].pose.position.x,
               collision_free_path->poses[i].pose.position.y,
               collision_free_path->poses[i].pose.position.z));
     std::cout << "x: " << collision_free_path->poses[i].pose.position.x
@@ -283,7 +285,7 @@ bool TrajectoryPlanner::optimalTrajectory(
               << " z: " << collision_free_path->poses[i].pose.position.z
               << std::endl;
   }
-  polyhedronsToACADO(ocp, polyhedron_vector, collision_free_path_vector, px_, py_, pz_);
+  // polyhedronsToACADO(ocp, polyhedron_vector, collision_free_path_vector, px_, py_, pz_);
   // setup reference trajectory
   ACADO::VariablesGrid reference_trajectory(6, my_grid_);
   ACADO::DVector reference_point(6);

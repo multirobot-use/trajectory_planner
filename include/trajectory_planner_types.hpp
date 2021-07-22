@@ -14,6 +14,7 @@ struct parameters {
   float vel_max = 5.0;
   float acc_max = 5.0;
   std::string frame = "map";
+  std::string pcd_file_path = "";
 };
 
 struct state {
