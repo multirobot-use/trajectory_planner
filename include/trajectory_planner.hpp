@@ -121,7 +121,7 @@ class TrajectoryPlanner {
   std::map<int, std::vector<state>> solved_trajectories_;
   int planner_state_ = PlannerStatus::FIRST_PLAN;
 
-  std::mutex mtx_jps_map_;
+  // std::mutex mtx_jps_map_;
 
   /**
    * @brief Calculate a path from one point to another at cte velocity
@@ -217,7 +217,7 @@ class TrajectoryPlanner {
    * @return true if all checks are passed
    * @return false if any ot the check is not passed
    */
-  virtual bool checks() {    return true;}
+  virtual bool checks(); 
 
   /**
    * @brief gives an initial orientation according to a trajectory given

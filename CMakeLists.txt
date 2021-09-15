@@ -62,7 +62,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES trajectory_planner
-  CATKIN_DEPENDS roscpp rospy std_msgs trajectory_msgs nav_msgs geometry_msgs message_generation
+  CATKIN_DEPENDS roscpp rospy std_msgs trajectory_msgs nav_msgs geometry_msgs message_generation safe_corridor_generator decomp_ros_utils pcl_ros
   DEPENDS ACADO Eigen3
 )
 

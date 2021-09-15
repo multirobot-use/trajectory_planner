@@ -69,10 +69,13 @@
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>nav_msgs</build_export_depend>
   <build_export_depend>safe_corridor_generator</build_export_depend>
+  <build_export_depend>decomp_util</build_export_depend>
+  <build_export_depend>decomp_ros_utils</build_export_depend>
   <build_depend>trajectory_msgs</build_depend>
   
 
   <exec_depend>roscpp</exec_depend>
+  <exec_depend>pcl_ros</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>message_runtime</exec_depend>
@@ -80,6 +83,9 @@
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>trajectory_msgs</exec_depend>
   <exec_depend>message_generation</exec_depend>
+  <exec_depend>decomp_ros_utils</exec_depend>
+  <exec_depend>decomp_util</exec_depend>
+  <exec_depend>safe_corridor_generator</exec_depend>
 
 
 

@@ -1,0 +1,16 @@
+<launch>
+    <arg name="drone_id" default="1"/>
+    <arg name="pcl_map_filename" default="$(find trajectory_planner)/maps/power_tower_danube.pcd" />
+
+
+    <!-- Launch trajectory_planner_node -->
+    <node pkg="trajectory_planner" type="trajectory_planner_node" name="trajectory_planner_ros" output="screen" ns="drone_$(arg drone_id)">
+        <rosparam file="$(find trajectory_planner)/test/param.yml" command="load"/>
+        <param name="drone_id" value="$(arg drone_id)"/>
+        <param name="pcl_filepath" value="$(arg pcl_map_filename)"/>
+    </node>
+
+
+    
+
+</launch>

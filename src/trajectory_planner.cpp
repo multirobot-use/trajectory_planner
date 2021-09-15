@@ -19,17 +19,17 @@ TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
   double segment_margin = 0.0;
   std::vector<double> _local_bbox{2.0, 2.0, 2.0};
   std::vector<float> _map_frame_coordinates{0, 0, 0};
-  double size_x{140};
-  double size_y{140};
-  double size_z{140};
+  double size_x{100};
+  double size_y{100};
+  double size_z{30};
   double min_z{0.0};
-  double max_z{50};
-  double jps_inflation{1.2};
-  double map_resolution{0.25};
-  double decompose_inflation{1.00};
+  double max_z{8};
+  double jps_inflation{1.25};
+  double map_resolution{0.5};
+  double decompose_inflation{1.0};
   bool test_ = false;
   double max_sampling_distance{0.3};
-  int max_jps_expansions{100};
+  int max_jps_expansions{500};
 
   safe_corridor_generator_ =
       std::make_shared<safe_corridor_generator::SafeCorridorGenerator>();
@@ -39,7 +39,7 @@ TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
       size_y, size_z, max_z, min_z, _map_frame_coordinates, jps_inflation,
       map_resolution, max_sampling_distance, max_jps_expansions);
 
-  safe_corridor_generator_->updateMaps();
+   safe_corridor_generator_->updateMaps();
 }
 
 TrajectoryPlanner::TrajectoryPlanner()
@@ -112,8 +112,8 @@ void TrajectoryPlanner::updateMap(
 
   pcl_cloud_ptr_ = _pcd_input;
 
-  safe_corridor_generator_->updateMaps(pcl_cloud_ptr_, my_pose);
-  mtx_jps_map_.unlock();
+ // safe_corridor_generator_->updateMaps(pcl_cloud_ptr_, my_pose);
+  // mtx_jps_map_.unlock();
   logger_->log(start_time, "update maps time");
 }
 
@@ -244,12 +244,12 @@ bool TrajectoryPlanner::optimalTrajectory(
 
   ACADO::OCP ocp(my_grid_);
   ocp.subjectTo(model);
-  ocp.subjectTo(-param_.acc_max <= ax_ <= param_.acc_max);
-  ocp.subjectTo(-param_.acc_max <= ay_ <= param_.acc_max);
-  ocp.subjectTo(-param_.acc_max <= az_ <= param_.acc_max);
-  ocp.subjectTo(-param_.vel_max <= vx_ <= param_.vel_max);
-  ocp.subjectTo(-param_.vel_max <= vy_ <= param_.vel_max);
-  ocp.subjectTo(-param_.vel_max <= vz_ <= param_.vel_max);
+  // ocp.subjectTo(-param_.acc_max <= ax_ <= param_.acc_max);
+  // ocp.subjectTo(-param_.acc_max <= ay_ <= param_.acc_max);
+  // ocp.subjectTo(-param_.acc_max <= az_ <= param_.acc_max);
+  // ocp.subjectTo(-param_.vel_max <= vx_ <= param_.vel_max);
+  // ocp.subjectTo(-param_.vel_max <= vy_ <= param_.vel_max);
+  // ocp.subjectTo(-param_.vel_max <= vz_ <= param_.vel_max);
 
   ocp.subjectTo(ACADO::AT_START, px_ == initial_trajectory[0].pos(0));
   ocp.subjectTo(ACADO::AT_START, py_ == initial_trajectory[0].pos(1));
@@ -262,11 +262,11 @@ bool TrajectoryPlanner::optimalTrajectory(
   ocp.subjectTo(ACADO::AT_START, az_ == initial_trajectory[0].acc(2));
 
   // generate polyhedrons
-  mtx_jps_map_.lock();
+  // mtx_jps_map_.lock();
   vec_E<Polyhedron<3>> polyhedron_vector =
       safe_corridor_generator_->getSafeCorridorPolyhedronVector(
           vectorToPath(initial_trajectory));  // get polyhedrons
-  mtx_jps_map_.unlock();
+  // mtx_jps_map_.unlock();
   // get JPS path along which the polyhedrons were generated - needed to
   // generation of correct constraints
   nav_msgs::PathPtr collision_free_path =
@@ -285,7 +285,7 @@ bool TrajectoryPlanner::optimalTrajectory(
               << " z: " << collision_free_path->poses[i].pose.position.z
               << std::endl;
   }
-  // polyhedronsToACADO(ocp, polyhedron_vector, collision_free_path_vector, px_, py_, pz_);
+  polyhedronsToACADO(ocp, polyhedron_vector, collision_free_path_vector, px_, py_, pz_);
   // setup reference trajectory
   ACADO::VariablesGrid reference_trajectory(6, my_grid_);
   ACADO::DVector reference_point(6);
@@ -392,14 +392,14 @@ void TrajectoryPlanner::polyhedronsToACADO(
       } else {
         ROS_ERROR("[Acado]: NaNs detected in polyhedrons ");
       }
-      ROS_INFO(
-          "[Acado]: Adding constraint: %.2f * px + %.2f * py + %.2f * pz <= "
-          "%.2f",
-          cs.A()(k, 0), cs.A()(k, 1), cs.A()(k, 2), cs.b()[k]);
-      ROS_INFO("[Acado]: Point: [%.2f, %.2f, %.2f], result = %.2f",
-               pt_inside(0), pt_inside(1), pt_inside(2),
-               cs.A()(k, 0) * pt_inside(0) + cs.A()(k, 1) * pt_inside(1) +
-                   cs.A()(k, 2) * pt_inside(2));
+      // ROS_INFO(
+      //     "[Acado]: Adding constraint: %.2f * px + %.2f * py + %.2f * pz <= "
+      //     "%.2f",
+      //     cs.A()(k, 0), cs.A()(k, 1), cs.A()(k, 2), cs.b()[k]);
+      // ROS_INFO("[Acado]: Point: [%.2f, %.2f, %.2f], result = %.2f",
+      //          pt_inside(0), pt_inside(1), pt_inside(2),
+      //          cs.A()(k, 0) * pt_inside(0) + cs.A()(k, 1) * pt_inside(1) +
+      //              cs.A()(k, 2) * pt_inside(2));
     }
   }
 }
@@ -419,4 +419,14 @@ void TrajectoryPlanner::lastPointOccupied(
     aux_state.pos = last_point;
     _initial_trajectory.back() = aux_state;
   }
+}
+bool TrajectoryPlanner::checks(){
+  // check waypoints to remove or not the waypoints to follow
+  if (waypointReached(goals_[0], states_[param_.drone_id])) {
+    std::cout << "Removed waypoint" << std::endl;
+    init_point_ = goals_[0].pos;
+    goals_.erase(goals_.begin());
+    if (!hasGoal()) return false;
+  }
+  return true;
 }

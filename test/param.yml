@@ -3,9 +3,9 @@
 horizon_length: 40 # steps
 n_drones: 1        # drones
 step_size: 0.2     # seconds
-planning_rate: 1   # sec
+planning_rate: 2   # sec
 visualization_rate: 2   # sec
-vel_max: 1         # m/s
+vel_max: 0.7         # m/s
 acc_max: 1         # m/s²
 
 frame: "map"

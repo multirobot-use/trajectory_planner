@@ -1,6 +1,6 @@
 <launch>
     <arg name="drone_id" default="1"/>
-    <arg name="pcl_map_filename" default="$(find trajectory_planner)/maps/sparse_forest.pcd" />
+    <arg name="pcl_map_filename" default="$(find trajectory_planner)/maps/power_tower_danube.pcd" />
 
 
     <!-- Launch Gazebo simulation -->
@@ -16,7 +16,7 @@
 		<arg name="id" value="$(arg drone_id)"/>
         <arg name="robot_model" value="typhoon_h480"/>
 		<arg name="material" value="Indigo"/>
-        <arg name="x" value="-12"/>
+        <arg name="x" value="-5"/>
         <arg name="y" value="0"/>
         <arg name="z" value="0"/>
         <arg name="yaw" value="0"/>
@@ -26,19 +26,19 @@
     <node pkg="ual_backend_mavros" type="ual_backend_mavros_server" name="ual" output="screen" ns="drone_$(arg drone_id)">
         <param name="uav_id" value="$(arg drone_id)"/>
         <param name="pose_frame_id" value="map"/>
-        <rosparam param="home_pose">[-12, 0, 0.0]</rosparam>
+        <rosparam param="home_pose">[-5, 0, 0.0]</rosparam>
     </node>
     
     <!-- Launch trajectory_planner_node -->
-    <node pkg="trajectory_planner" type="trajectory_planner_node" name="trajectory_planner_ros" output="screen" ns="drone_$(arg drone_id)">
+    <!-- <node pkg="trajectory_planner" type="trajectory_planner_node" name="trajectory_planner_ros" output="screen" ns="drone_$(arg drone_id)">
         <rosparam file="$(find trajectory_planner)/test/param.yml" command="load"/>
         <param name="drone_id" value="$(arg drone_id)"/>
         <param name="pcl_filepath" value="$(arg pcl_map_filename)"/>
-    </node>
+    </node> -->
 
-    <node pkg = "trajectory_follower" name = "trajectory_follower_node" type = "trajectory_follower_node" ns="drone_$(arg drone_id)" >
-        <param name="drone_id" value="$(arg drone_id)"/>
-    </node>    
+   <include file="$(find trajectory_follower)/launch/trajectory_follower.launch">
+        <arg name="drone_id" value="$(arg drone_id)"/>
+    </include>    
 
     <node pkg="tf2_ros" type="static_transform_publisher" name="static_transformation_node" args="0 0 0 3.14 0 0 drone_1/base_link drone_1/velodyne"></node>
 

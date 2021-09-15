@@ -193,5 +193,25 @@ if __name__ == "__main__":
     print("hi")
     #menu mode
     while (not rospy.is_shutdown()):
-        show_menu(drone)            
-        time.sleep(1)
+        # show_menu(drone)            
+        # time.sleep(1)
+        a = raw_input("press a key to start")
+        drone.take_off(float(4.0))
+
+        wp = [10, 0, 4]
+        drone.add_one_waypoint(wp)
+        wp = [-10, 0, 4]
+        drone.add_one_waypoint(wp)
+        wp = [-10, 10, 4]
+        drone.add_one_waypoint(wp)
+        wp = [10, 0, 4]
+        drone.add_one_waypoint(wp)
+        wp = [10, 5, 4]
+        drone.add_one_waypoint(wp)
+        
+
+
+
+
+        time.sleep(2)
+        drone.start_mission()

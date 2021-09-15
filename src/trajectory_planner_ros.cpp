@@ -53,7 +53,7 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh) : nh_(_nh) {
 
   // pcd_sub_ = nh_.subscribe(ops);
 
-  async_spinner_.start();
+  // async_spinner_.start();
 
   // create timer
   planTimer_ = nh_.createTimer(ros::Duration(param_.planning_rate),
@@ -152,10 +152,11 @@ void TrajectoryPlannerRos::replanCB(const ros::TimerEvent &e) {
                 trajectory_planner_ptr_->getReferenceTrajectory());
     trajectory_planner_ptr_->safe_corridor_generator_->publishCorridor(
         corridor_pub_);
-    trajectory_planner_ptr_->safe_corridor_generator_->publishCloud(
-        pub_point_cloud_);
-    trajectory_planner_ptr_->safe_corridor_generator_->updateMaps();
+    // trajectory_planner_ptr_->safe_corridor_generator_->updateMaps();
   }
+  trajectory_planner_ptr_->safe_corridor_generator_->publishCloud(
+        pub_point_cloud_);
+
   trajectory_planner_ptr_->plan();
 }
 
