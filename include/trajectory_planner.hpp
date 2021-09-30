@@ -182,7 +182,7 @@ class TrajectoryPlanner {
  private:
 
   std::chrono::time_point<std::chrono::steady_clock> start_time_cycle_;
-  const float REACH_TOL = 1;  //! tolerance to reach waypoints
+  const float REACH_TOL = 2;  //! tolerance to reach waypoints
 
   /**
    * @brief returns an initial straight trajectory for the drone according to
