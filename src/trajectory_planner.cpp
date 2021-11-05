@@ -280,7 +280,7 @@ bool TrajectoryPlanner::optimalTrajectory(
         Eigen::Vector3d(collision_free_path->poses[i].pose.position.x,
               collision_free_path->poses[i].pose.position.y,
               collision_free_path->poses[i].pose.position.z));
-    std::cout << "x: " << collision_free_path->poses[i].pose.position.x
+    std::cout << " x: " << collision_free_path->poses[i].pose.position.x
               << " y: " << collision_free_path->poses[i].pose.position.y
               << " z: " << collision_free_path->poses[i].pose.position.z
               << std::endl;
@@ -289,10 +289,24 @@ bool TrajectoryPlanner::optimalTrajectory(
   // setup reference trajectory
   ACADO::VariablesGrid reference_trajectory(6, my_grid_);
   ACADO::DVector reference_point(6);
-  for (int k = 0; k < param_.horizon_length; k++) {
-    reference_point(0) = initial_trajectory[k].pos(0);
-    reference_point(1) = initial_trajectory[k].pos(1);
-    reference_point(2) = initial_trajectory[k].pos(2);
+
+
+  // OPERATING WITH INITIAL TRAJECTORY
+  // for (int k = 0; k < param_.horizon_length; k++) {
+  //   reference_point(0) = initial_trajectory[k].pos(0);
+  //   reference_point(1) = initial_trajectory[k].pos(1);
+  //   reference_point(2) = initial_trajectory[k].pos(2);
+  //   reference_point(3) = 0.0;
+  //   reference_point(4) = 0.0;
+  //   reference_point(5) = 0.0;
+  //   reference_trajectory.setVector(k, reference_point);  // TODO: check
+  // }
+
+  // OPERATING WITH COLLISION FREE PATH
+  for (int k = 0; k < collision_free_path->poses.size(); k++) {
+    reference_point(0) = collision_free_path->poses[k].pose.position.x;
+    reference_point(1) = collision_free_path->poses[k].pose.position.y;
+    reference_point(2) = collision_free_path->poses[k].pose.position.z;
     reference_point(3) = 0.0;
     reference_point(4) = 0.0;
     reference_point(5) = 0.0;
@@ -312,12 +326,12 @@ bool TrajectoryPlanner::optimalTrajectory(
 
   ACADO::OptimizationAlgorithm solver(ocp);
   solver.set(ACADO::MAX_TIME, 2.0);  // TODO: have it as parameter
-  // solver.set(ACADO::PRINT_INTEGRATOR_PROFILE, false);
-  // solver.set(ACADO::CONIC_SOLVER_PRINT_LEVEL, ACADO::NONE);
+  solver.set(ACADO::PRINT_INTEGRATOR_PROFILE, false);
+  solver.set(ACADO::CONIC_SOLVER_PRINT_LEVEL, ACADO::NONE);
   // solver.set(ACADO::RELAXATION_PARAMETER, 30.0);
-  // solver.set(ACADO::PRINTLEVEL, ACADO::NONE);
-  // solver.set(ACADO::PRINT_COPYRIGHT, ACADO::NONE);
-  // solver.set(ACADO::INTEGRATOR_PRINTLEVEL, ACADO::NONE);
+  solver.set(ACADO::PRINTLEVEL, ACADO::NONE);
+  solver.set(ACADO::PRINT_COPYRIGHT, ACADO::NONE);
+  solver.set(ACADO::INTEGRATOR_PRINTLEVEL, ACADO::NONE);
 
   bool solver_success = solver.solve();
 
