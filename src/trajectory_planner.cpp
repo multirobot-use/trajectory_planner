@@ -280,10 +280,10 @@ bool TrajectoryPlanner::optimalTrajectory(
         Eigen::Vector3d(collision_free_path->poses[i].pose.position.x,
               collision_free_path->poses[i].pose.position.y,
               collision_free_path->poses[i].pose.position.z));
-    std::cout << " x: " << collision_free_path->poses[i].pose.position.x
-              << " y: " << collision_free_path->poses[i].pose.position.y
-              << " z: " << collision_free_path->poses[i].pose.position.z
-              << std::endl;
+    // std::cout << " x: " << collision_free_path->poses[i].pose.position.x
+    //           << " y: " << collision_free_path->poses[i].pose.position.y
+    //           << " z: " << collision_free_path->poses[i].pose.position.z
+    //           << std::endl;
   }
   polyhedronsToACADO(ocp, polyhedron_vector, collision_free_path_vector, px_, py_, pz_);
   // setup reference trajectory
@@ -327,7 +327,7 @@ bool TrajectoryPlanner::optimalTrajectory(
   ACADO::OptimizationAlgorithm solver(ocp);
   solver.set(ACADO::MAX_TIME, 2.0);  // TODO: have it as parameter
   solver.set(ACADO::PRINT_INTEGRATOR_PROFILE, false);
-  solver.set(ACADO::CONIC_SOLVER_PRINT_LEVEL, ACADO::NONE);
+  // solver.set(ACADO::CONIC_SOLVER_PRINT_LEVEL, ACADO::NONE);
   // solver.set(ACADO::RELAXATION_PARAMETER, 30.0);
   solver.set(ACADO::PRINTLEVEL, ACADO::NONE);
   solver.set(ACADO::PRINT_COPYRIGHT, ACADO::NONE);
@@ -388,16 +388,16 @@ void TrajectoryPlanner::polyhedronsToACADO(
   ROS_INFO("[Acado]: polyhedrons to acado ");
 
   for (size_t i = 0; i < path_free.size() - 1; i++) {
-    ROS_INFO(
-        "[Acado]: polyhedrons to acado - iter i = %lu, initial path size = "
-        "%lu, polyhedrons size =%lu ",
-        i, path_free.size(), _vector_of_polyhedrons.size());
+    // ROS_INFO(
+    //     "[Acado]: polyhedrons to acado - iter i = %lu, initial path size = "
+    //     "%lu, polyhedrons size =%lu ",
+    //     i, path_free.size(), _vector_of_polyhedrons.size());
     const auto pt_inside = path_free[i + 1];
 
     LinearConstraint3D cs(pt_inside, _vector_of_polyhedrons[i].hyperplanes());
     for (size_t k = 0; k < cs.b().size();
          k++) {  // each polyhedron i is subject to k constraints
-      ROS_INFO("[Acado]: polyhedrons to acado - iter k = %lu ", k);
+      // ROS_INFO("[Acado]: polyhedrons to acado - iter k = %lu ", k);
       if (!std::isnan(cs.A()(k, 0)) && !std::isnan(cs.A()(k, 1)) &&
           !std::isnan(cs.A()(k, 2)) && !std::isnan(cs.b()[k])) {
         _ocp.subjectTo(i + 1, cs.A()(k, 0) * _px + cs.A()(k, 1) * _py +
