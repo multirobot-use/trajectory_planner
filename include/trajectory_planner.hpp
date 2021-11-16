@@ -6,6 +6,7 @@
 #include <acado/acado_optimal_control.hpp>
 #include <acado_toolkit.hpp>
 #include <map>
+#include <chrono>
 #include "log.h"
 #include "trajectory_planner_types.hpp"
 #include <safe_corridor_generator/safe_corridor_generator.h>

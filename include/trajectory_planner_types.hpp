@@ -2,6 +2,7 @@
 
 #include "ros/ros.h"
 #include <nav_msgs/Path.h>
+#include <chrono>
 
 namespace trajectory_planner{
 struct parameters {
@@ -21,6 +22,7 @@ struct state {
   Eigen::Vector3d pos = Eigen::Vector3d::Zero();
   Eigen::Vector3d vel = Eigen::Vector3d::Zero();
   Eigen::Vector3d acc = Eigen::Vector3d::Zero();
+  std::time_t time_stamp;
   Eigen::Quaterniond orientation;
 };
 
