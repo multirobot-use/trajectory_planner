@@ -8,9 +8,15 @@ TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
       my_grid_(0.0, (param_.horizon_length - 1) * param_.step_size,
                param_.horizon_length),
       pcl_cloud_ptr_(new pcl::PointCloud<pcl::PointXYZ>()) {
+  
   // initialize solved trajectory
   solved_trajectories_[param_.drone_id] =
       std::vector<state>(_param.horizon_length);
+  
+    // Initialize clock
+  start_timer_ = std::chrono::high_resolution_clock::now();
+  start_time_  = std::chrono::system_clock::to_time_t(start_timer_);
+
   // initialize logger
   logger_ = std::make_unique<Logger>(param_.drone_id);
 
@@ -340,7 +346,17 @@ bool TrajectoryPlanner::optimalTrajectory(
   solver.getDifferentialStates(output_states);
   solver.getControls(output_control);
 
-  for (int k = 0; k < param_.horizon_length; k++) {
+  auto current_timer = std::chrono::high_resolution_clock::now();
+  std::time_t current_time = std::chrono::system_clock::to_time_t(current_timer) - start_time_;
+
+  // Start mutex
+  // if (param_.drone_id == 1){
+  //   mtx_leader_traj_.lock();
+  // }
+
+  for (int k = 0; k < collision_free_path->poses.size(); k++) {
+    // solved_trajectories_[param_.drone_id][k].time_stamp = current_time + k*param_.step_size;
+    // std::cout << "Current time: " << current_time << "   k=" << k << ": " << solved_trajectories_[param_.drone_id][k].time_stamp << std::endl;  
     solved_trajectories_[param_.drone_id][k].pos(0) = output_states(k, 0);
     solved_trajectories_[param_.drone_id][k].pos(1) = output_states(k, 1);
     solved_trajectories_[param_.drone_id][k].pos(2) = output_states(k, 2);
@@ -351,6 +367,12 @@ bool TrajectoryPlanner::optimalTrajectory(
     solved_trajectories_[param_.drone_id][k].acc(1) = output_control(k, 1);
     solved_trajectories_[param_.drone_id][k].acc(2) = output_control(k, 2);
   }
+
+  // End mutex
+  // if (param_.drone_id == 1){
+  //   mtx_leader_traj_.unlock();
+  // }
+
   px_.clearStaticCounters();
   py_.clearStaticCounters();
   pz_.clearStaticCounters();

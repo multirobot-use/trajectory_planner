@@ -6,7 +6,6 @@
 #include <acado/acado_optimal_control.hpp>
 #include <acado_toolkit.hpp>
 #include <map>
-#include <chrono>
 #include "log.h"
 #include "trajectory_planner_types.hpp"
 #include <safe_corridor_generator/safe_corridor_generator.h>
@@ -118,11 +117,14 @@ class TrajectoryPlanner {
   ACADO::Grid my_grid_;
   std::vector<state> goals_;
   bool init = true;
-  Eigen::Vector3d init_point_;
   std::map<int, std::vector<state>> solved_trajectories_;
+  Eigen::Vector3d init_point_;
   int planner_state_ = PlannerStatus::FIRST_PLAN;
+  std::chrono::time_point<std::chrono::high_resolution_clock> start_timer_;
+  std::time_t start_time_;
 
   // std::mutex mtx_jps_map_;
+  std::mutex mtx_leader_traj_;
 
   /**
    * @brief Calculate a path from one point to another at cte velocity
