@@ -407,7 +407,7 @@ void TrajectoryPlanner::polyhedronsToACADO(
     ACADO::DifferentialState &_py, ACADO::DifferentialState &_pz) {
   // Convert to inequality constraints Ax < b
   // Taken from decomp test node
-  ROS_INFO("[Acado]: polyhedrons to acado ");
+  // ROS_INFO("[Acado]: polyhedrons to acado ");
 
   for (size_t i = 0; i < path_free.size() - 1; i++) {
     // ROS_INFO(
