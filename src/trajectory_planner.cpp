@@ -298,26 +298,26 @@ bool TrajectoryPlanner::optimalTrajectory(
 
 
   // OPERATING WITH INITIAL TRAJECTORY
-  // for (int k = 0; k < param_.horizon_length; k++) {
-  //   reference_point(0) = initial_trajectory[k].pos(0);
-  //   reference_point(1) = initial_trajectory[k].pos(1);
-  //   reference_point(2) = initial_trajectory[k].pos(2);
-  //   reference_point(3) = 0.0;
-  //   reference_point(4) = 0.0;
-  //   reference_point(5) = 0.0;
-  //   reference_trajectory.setVector(k, reference_point);  // TODO: check
-  // }
-
-  // OPERATING WITH COLLISION FREE PATH
-  for (int k = 0; k < collision_free_path->poses.size(); k++) {
-    reference_point(0) = collision_free_path->poses[k].pose.position.x;
-    reference_point(1) = collision_free_path->poses[k].pose.position.y;
-    reference_point(2) = collision_free_path->poses[k].pose.position.z;
+  for (int k = 0; k < param_.horizon_length; k++) {
+    reference_point(0) = initial_trajectory[k].pos(0);
+    reference_point(1) = initial_trajectory[k].pos(1);
+    reference_point(2) = initial_trajectory[k].pos(2);
     reference_point(3) = 0.0;
     reference_point(4) = 0.0;
     reference_point(5) = 0.0;
     reference_trajectory.setVector(k, reference_point);  // TODO: check
   }
+
+  // OPERATING WITH COLLISION FREE PATH
+  // for (int k = 0; k < collision_free_path->poses.size(); k++) {
+  //   reference_point(0) = collision_free_path->poses[k].pose.position.x;
+  //   reference_point(1) = collision_free_path->poses[k].pose.position.y;
+  //   reference_point(2) = collision_free_path->poses[k].pose.position.z;
+  //   reference_point(3) = 0.0;
+  //   reference_point(4) = 0.0;
+  //   reference_point(5) = 0.0;
+  //   reference_trajectory.setVector(k, reference_point);  // TODO: check
+  // }
 
   // DEFINE LSQ function to minimize diff from desired trajectory
   ACADO::Function rf;
