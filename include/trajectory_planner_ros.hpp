@@ -111,6 +111,7 @@ class TrajectoryPlannerRos {
    * \param TimerEvent structure passed to callback invoked by ros::Timer
    */
   void pubVisCB(const ros::TimerEvent &e);
+  
   /*! \brief Callback for plan timer.
    *   \param TimerEvent structure passed to callback invoked by ros::Timer
    */

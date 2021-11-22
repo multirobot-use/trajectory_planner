@@ -11,6 +11,7 @@ struct parameters {
   float step_size = 0.1;           // seconds
   float planning_rate = 1.0;       // sec
   float visualization_rate = 1.0;  // sec
+  float clock_rate = 0.01;         // sec
   int drone_id = 1;
   float vel_max = 5.0;
   float acc_max = 5.0;
@@ -22,7 +23,7 @@ struct state {
   Eigen::Vector3d pos = Eigen::Vector3d::Zero();
   Eigen::Vector3d vel = Eigen::Vector3d::Zero();
   Eigen::Vector3d acc = Eigen::Vector3d::Zero();
-  std::time_t time_stamp;
+  float time_stamp;
   Eigen::Quaterniond orientation;
 };
 

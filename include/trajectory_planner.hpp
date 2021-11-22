@@ -102,6 +102,11 @@ class TrajectoryPlanner {
   virtual void plan();
 
   /**
+   * @brief sets the 
+   */
+  void setCurrentTime(float time_) {current_time_ = time_;}
+
+  /**
    * @brief sets the solved trajectories for each drone
    *
    * @param solved_trajectory trajectory solved for each drone
@@ -122,6 +127,7 @@ class TrajectoryPlanner {
   int planner_state_ = PlannerStatus::FIRST_PLAN;
   std::chrono::time_point<std::chrono::high_resolution_clock> start_timer_;
   std::time_t start_time_;
+  float current_time_;
 
   // std::mutex mtx_jps_map_;
   std::mutex mtx_leader_traj_;
