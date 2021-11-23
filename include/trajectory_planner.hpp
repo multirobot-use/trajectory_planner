@@ -102,7 +102,7 @@ class TrajectoryPlanner {
   virtual void plan();
 
   /**
-   * @brief sets the 
+   * @brief sets the current time
    */
   void setCurrentTime(float time_) {current_time_ = time_;}
 
@@ -125,12 +125,10 @@ class TrajectoryPlanner {
   std::map<int, std::vector<state>> solved_trajectories_;
   Eigen::Vector3d init_point_;
   int planner_state_ = PlannerStatus::FIRST_PLAN;
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_timer_;
-  std::time_t start_time_;
   float current_time_;
 
   // std::mutex mtx_jps_map_;
-  std::mutex mtx_leader_traj_;
+  // std::mutex mtx_leader_traj_;
 
   /**
    * @brief Calculate a path from one point to another at cte velocity

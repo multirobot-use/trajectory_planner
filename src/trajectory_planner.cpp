@@ -12,10 +12,6 @@ TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
   // initialize solved trajectory
   solved_trajectories_[param_.drone_id] =
       std::vector<state>(_param.horizon_length);
-  
-    // Initialize clock
-  start_timer_ = std::chrono::high_resolution_clock::now();
-  start_time_  = std::chrono::system_clock::to_time_t(start_timer_);
 
   // initialize logger
   logger_ = std::make_unique<Logger>(param_.drone_id);
@@ -234,7 +230,7 @@ std::vector<state> TrajectoryPlanner::pathFromPointToAnother(
 
 bool TrajectoryPlanner::optimalTrajectory(
     const std::vector<state> &initial_trajectory) {
-  if (initial_trajectory.size() != param_.horizon_length) return -2;
+  // if (initial_trajectory.size() != param_.horizon_length) return -2;
   ACADO::DifferentialState px_, py_, pz_, vx_, vy_, vz_;
   ACADO::Control ax_, ay_, az_;
 
@@ -298,26 +294,26 @@ bool TrajectoryPlanner::optimalTrajectory(
 
 
   // OPERATING WITH INITIAL TRAJECTORY
-  for (int k = 0; k < param_.horizon_length; k++) {
-    reference_point(0) = initial_trajectory[k].pos(0);
-    reference_point(1) = initial_trajectory[k].pos(1);
-    reference_point(2) = initial_trajectory[k].pos(2);
-    reference_point(3) = 0.0;
-    reference_point(4) = 0.0;
-    reference_point(5) = 0.0;
-    reference_trajectory.setVector(k, reference_point);  // TODO: check
-  }
-
-  // OPERATING WITH COLLISION FREE PATH
-  // for (int k = 0; k < collision_free_path->poses.size(); k++) {
-  //   reference_point(0) = collision_free_path->poses[k].pose.position.x;
-  //   reference_point(1) = collision_free_path->poses[k].pose.position.y;
-  //   reference_point(2) = collision_free_path->poses[k].pose.position.z;
+  // for (int k = 0; k < param_.horizon_length; k++) {
+  //   reference_point(0) = initial_trajectory[k].pos(0);
+  //   reference_point(1) = initial_trajectory[k].pos(1);
+  //   reference_point(2) = initial_trajectory[k].pos(2);
   //   reference_point(3) = 0.0;
   //   reference_point(4) = 0.0;
   //   reference_point(5) = 0.0;
   //   reference_trajectory.setVector(k, reference_point);  // TODO: check
   // }
+
+  // OPERATING WITH COLLISION FREE PATH
+  for (int k = 0; k < collision_free_path->poses.size(); k++) {
+    reference_point(0) = collision_free_path->poses[k].pose.position.x;
+    reference_point(1) = collision_free_path->poses[k].pose.position.y;
+    reference_point(2) = collision_free_path->poses[k].pose.position.z;
+    reference_point(3) = 0.0;
+    reference_point(4) = 0.0;
+    reference_point(5) = 0.0;
+    reference_trajectory.setVector(k, reference_point);  // TODO: check
+  }
 
   // DEFINE LSQ function to minimize diff from desired trajectory
   ACADO::Function rf;
@@ -346,8 +342,6 @@ bool TrajectoryPlanner::optimalTrajectory(
   solver.getDifferentialStates(output_states);
   solver.getControls(output_control);
 
-  auto current_timer = std::chrono::high_resolution_clock::now();
-  std::time_t current_time = std::chrono::system_clock::to_time_t(current_timer) - start_time_;
 
   // Start mutex
   // if (param_.drone_id == 1){
@@ -355,8 +349,8 @@ bool TrajectoryPlanner::optimalTrajectory(
   // }
 
   for (int k = 0; k < collision_free_path->poses.size(); k++) {
-    // solved_trajectories_[param_.drone_id][k].time_stamp = current_time + k*param_.step_size;
-    // std::cout << "Current time: " << current_time << "   k=" << k << ": " << solved_trajectories_[param_.drone_id][k].time_stamp << std::endl;  
+    solved_trajectories_[param_.drone_id][k].time_stamp = current_time_ + k*param_.step_size;
+    // std::cout << "Current time: " << current_time_ << "   k=" << k << ": " << solved_trajectories_[param_.drone_id][k].time_stamp << std::endl;  
     solved_trajectories_[param_.drone_id][k].pos(0) = output_states(k, 0);
     solved_trajectories_[param_.drone_id][k].pos(1) = output_states(k, 1);
     solved_trajectories_[param_.drone_id][k].pos(2) = output_states(k, 2);
