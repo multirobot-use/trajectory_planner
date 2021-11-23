@@ -10,8 +10,8 @@ TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
       pcl_cloud_ptr_(new pcl::PointCloud<pcl::PointXYZ>()) {
   
   // initialize solved trajectory
-  solved_trajectories_[param_.drone_id] =
-      std::vector<state>(_param.horizon_length);
+  // solved_trajectories_[param_.drone_id] =
+  //     std::vector<state>(_param.horizon_length);
 
   // initialize logger
   logger_ = std::make_unique<Logger>(param_.drone_id);
@@ -231,10 +231,16 @@ std::vector<state> TrajectoryPlanner::pathFromPointToAnother(
 bool TrajectoryPlanner::optimalTrajectory(
     const std::vector<state> &initial_trajectory) {
   // if (initial_trajectory.size() != param_.horizon_length) return -2;
+
+  solved_trajectories_[param_.drone_id] = std::vector<state>(initial_trajectory.size());
+
   ACADO::DifferentialState px_, py_, pz_, vx_, vy_, vz_;
   ACADO::Control ax_, ay_, az_;
 
   ACADO::DifferentialEquation model;
+
+  ACADO::Grid my_grid_(0.0, (initial_trajectory.size() - 1) * param_.step_size,
+              initial_trajectory.size());
 
   // define the model
   model << dot(px_) == vx_;
