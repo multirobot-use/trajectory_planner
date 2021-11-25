@@ -355,7 +355,8 @@ bool TrajectoryPlanner::optimalTrajectory(
   // }
 
   for (int k = 0; k < collision_free_path->poses.size(); k++) {
-    solved_trajectories_[param_.drone_id][k].time_stamp = current_time_ + k*param_.step_size;
+    // solved_trajectories_[param_.drone_id][k].time_stamp = current_time_ + k*param_.step_size;
+    solved_trajectories_[param_.drone_id][k].time_stamp = initial_trajectory[0].time_stamp + k*param_.step_size;
     // std::cout << "Current time: " << current_time_ << "   k=" << k << ": " << solved_trajectories_[param_.drone_id][k].time_stamp << std::endl;  
     solved_trajectories_[param_.drone_id][k].pos(0) = output_states(k, 0);
     solved_trajectories_[param_.drone_id][k].pos(1) = output_states(k, 1);
