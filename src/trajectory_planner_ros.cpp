@@ -8,6 +8,7 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh) : nh_(_nh) {
   safeGetParam(nh_, "n_drones", param_.n_drones);
   safeGetParam(nh_, "step_size", param_.step_size);
   safeGetParam(nh_, "planning_rate", param_.planning_rate);
+  safeGetParam(nh_, "topics_rate", param_.topics_rate);
   safeGetParam(nh_, "drone_id", param_.drone_id);
   safeGetParam(nh_, "vel_max", param_.vel_max);
   safeGetParam(nh_, "acc_max", param_.acc_max);

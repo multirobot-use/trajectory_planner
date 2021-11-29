@@ -6,12 +6,13 @@
 
 namespace trajectory_planner{
 struct parameters {
-  float horizon_length = 40;        // number of steps
+  float horizon_length = 40;       // number of steps
   int n_drones = 1;                // number of drones
   float step_size = 0.1;           // seconds
   float planning_rate = 1.0;       // sec
   float visualization_rate = 1.0;  // sec
-  float clock_rate = 0.01;         // sec
+  float clock_rate  = 0.01;        // sec
+  float topics_rate = 0.1;         // sec
   int drone_id = 1;
   float vel_max = 5.0;
   float acc_max = 5.0;

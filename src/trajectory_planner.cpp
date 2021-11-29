@@ -348,7 +348,6 @@ bool TrajectoryPlanner::optimalTrajectory(
   solver.getDifferentialStates(output_states);
   solver.getControls(output_control);
 
-
   // Start mutex
   // if (param_.drone_id == 1){
   //   mtx_leader_traj_.lock();
