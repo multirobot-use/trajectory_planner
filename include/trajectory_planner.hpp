@@ -19,7 +19,7 @@ namespace trajectory_planner {
  * Abstract base class for mission planner.
  */
 
-enum PlannerStatus { FIRST_PLAN = 0, REPLANNED = 2 };
+enum PlannerStatus { FIRST_PLAN = 0, REPLANNED = 2, INSPECTING = 3 };
 enum MissionStatus { GO_TO = 0, MISSION_ZONE = 1 };
 
 class TrajectoryPlanner {
@@ -200,6 +200,17 @@ class TrajectoryPlanner {
    * @return vector of states of the trajectory
    */
   virtual std::vector<state> initialTrajectory(const state &_initial_pose) {
+    return pathFromPointToAnother(_initial_pose.pos, goals_[0].pos);
+  }
+
+  /**
+   * @brief returns the inspection trajectory for the drone according to
+   * the initial pose
+   *
+   * @param initial_pose initial pose of the drone
+   * @return vector of states of the trajectory
+   */
+  virtual std::vector<state> inspectionTrajectory(const state &_initial_pose) {
     return pathFromPointToAnother(_initial_pose.pos, goals_[0].pos);
   }
 

@@ -82,10 +82,18 @@ void TrajectoryPlanner::plan() {
     // std::cout<<"i: "<<param_.planning_rate/param_.step_size+shift<<std::endl;
   }
 
-  reference_traj = initialTrajectory(initial_pose);
+  if (planner_state_ == PlannerStatus::INSPECTING){
+    reference_traj = inspectionTrajectory(initial_pose);
+  }
+  else{
+    reference_traj = initialTrajectory(initial_pose);
+  }
+  
   if (reference_traj.empty()) {
-    planner_state_ == PlannerStatus::FIRST_PLAN;
-    std::cout << "Initial trajectory empty...breaking" << std::endl;
+    if (planner_state_ != PlannerStatus::INSPECTING){
+      planner_state_ == PlannerStatus::FIRST_PLAN;
+      std::cout << "Initial trajectory empty...breaking" << std::endl;
+    }
     return;
   } else {
     if (trajectoryHasNan(reference_traj)) {
@@ -103,7 +111,7 @@ void TrajectoryPlanner::plan() {
   // calculate orientation
   initialOrientation(solved_trajectories_[param_.drone_id]);
 
-  planner_state_ = PlannerStatus::REPLANNED;
+  if (planner_state_ != PlannerStatus::INSPECTING)  {planner_state_ = PlannerStatus::REPLANNED;}
   logger_->log(start_time, "solving cycle");
 }
 
