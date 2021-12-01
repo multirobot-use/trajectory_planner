@@ -27,6 +27,7 @@ class TrajectoryPlanner {
   std::unique_ptr<Logger> logger_;
   std::vector<state> reference_traj;
   std::map<int, state> states_;
+  float start_plan_time_;
 
   boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> pcl_cloud_ptr_;
   std::shared_ptr<safe_corridor_generator::SafeCorridorGenerator>  safe_corridor_generator_;

@@ -14,6 +14,7 @@ struct parameters {
   float clock_rate  = 0.01;        // sec
   float topics_rate = 0.1;         // sec
   int drone_id = 1;
+  int flight_mode = 1;
   float vel_max = 5.0;
   float acc_max = 5.0;
   std::string frame = "map";

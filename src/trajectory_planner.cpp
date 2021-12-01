@@ -55,6 +55,8 @@ TrajectoryPlanner::~TrajectoryPlanner() {}
 
 void TrajectoryPlanner::plan() {
   auto start_time = std::chrono::steady_clock::now();
+  auto aux_start_plan_time_ = ros::Time::now();
+  start_plan_time_ = aux_start_plan_time_.toSec();
   logger_->log(start_time_cycle_, "plan cycle");
   start_time_cycle_ = std::chrono::steady_clock::now();
   if (!hasGoal()) {
