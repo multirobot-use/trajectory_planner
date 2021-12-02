@@ -59,6 +59,16 @@ void TrajectoryPlanner::plan() {
   start_plan_time_ = aux_start_plan_time_.toSec();
   logger_->log(start_time_cycle_, "plan cycle");
   start_time_cycle_ = std::chrono::steady_clock::now();
+
+  std::cout << "Planner status: " << planner_state_ << std::endl;
+
+  if (planner_state_ == PlannerStatus::INSPECTING) {
+    if (inspecting())   std::cout << "Inspecting..." << std::endl;
+    else {
+      std::cout << "Inspecting: close enough!" << std::endl;
+      return;
+    }
+  }
   if (!hasGoal()) {
     planner_state_ = PlannerStatus::FIRST_PLAN;
     std::cout << "there's no goals" << std::endl;
@@ -75,15 +85,29 @@ void TrajectoryPlanner::plan() {
   } else {
     int shift = closestPoint(solved_trajectories_[param_.drone_id],
                              states_[param_.drone_id]);
-    // std::cout<<shift<<std::endl;
-    initial_pose =
-        solved_trajectories_[param_.drone_id]
-                            [param_.planning_rate / param_.step_size + shift];
-    // std::cout<<"i: "<<param_.planning_rate/param_.step_size+shift<<std::endl;
+
+    // std::cout << "Shift: " << shift << std::endl;
+    // std::cout << "i: " << param_.planning_rate/param_.step_size+shift << std::endl;
+    // std::cout << "Solved trajectory size: " << solved_trajectories_[param_.drone_id].size() << std::endl;
+    // std::cout << "Maximum value: " << (solved_trajectories_[param_.drone_id].size() - (param_.planning_rate/param_.step_size)) << std::endl;
+
+    if (shift > (solved_trajectories_[param_.drone_id].size() - (param_.planning_rate/param_.step_size))){
+      // std::cout << "Taking end of trajectory" << std::endl;
+      auto end_pose = solved_trajectories_[param_.drone_id].size();
+      initial_pose  = solved_trajectories_[param_.drone_id][end_pose - 1];
+    }
+    else{
+      initial_pose =
+          solved_trajectories_[param_.drone_id]
+                              [param_.planning_rate / param_.step_size + shift];
+    }
+  
   }
 
   if (planner_state_ == PlannerStatus::INSPECTING){
+    std::cout << "Enter Inspection" << std::endl;
     reference_traj = inspectionTrajectory(initial_pose);
+    std::cout << "Exit Inspection" << std::endl;
   }
   else{
     reference_traj = initialTrajectory(initial_pose);
@@ -92,8 +116,8 @@ void TrajectoryPlanner::plan() {
   if (reference_traj.empty()) {
     if (planner_state_ != PlannerStatus::INSPECTING){
       planner_state_ == PlannerStatus::FIRST_PLAN;
-      std::cout << "Initial trajectory empty...breaking" << std::endl;
     }
+    std::cout << "Initial trajectory empty...breaking" << std::endl;
     return;
   } else {
     if (trajectoryHasNan(reference_traj)) {
@@ -101,14 +125,14 @@ void TrajectoryPlanner::plan() {
       logger_->log(reference_traj, "Nan or Inf found in ref trajectory");
       return;
     }
-    // calculate optimal trajectory
+    // Calculate optimal trajectory
     lastPointOccupied(reference_traj);
     bool solver_success = optimalTrajectory(reference_traj);
     if (solver_success != 0) {
       logger_->log(solver_success, "Error solving the ocp: ");
     }
   }
-  // calculate orientation
+  // Calculate orientation
   initialOrientation(solved_trajectories_[param_.drone_id]);
 
   if (planner_state_ != PlannerStatus::INSPECTING)  {planner_state_ = PlannerStatus::REPLANNED;}
