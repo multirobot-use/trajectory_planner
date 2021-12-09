@@ -106,6 +106,13 @@ class TrajectoryPlanner {
   int getStatus() { return planner_state_; }
 
   /**
+   * @brief gives the status of the planner
+   *
+   * @return value of the PlannerStatus
+   */
+  void setStatus(int status_) { planner_state_ = status_; }
+
+  /**
    * @brief executes the planner of the drone
    */
   virtual void plan();

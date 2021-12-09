@@ -62,13 +62,20 @@ void TrajectoryPlanner::plan() {
 
   std::cout << "Planner status: " << planner_state_ << std::endl;
 
+  int size_of_trajectory   = solved_trajectories_[param_.drone_id].size();
+
   if (planner_state_ == PlannerStatus::INSPECTING) {
     if (inspecting())   std::cout << "Inspecting..." << std::endl;
     else {
       std::cout << "Inspecting: close enough!" << std::endl;
       return;
     }
-  }
+  } else if ((solved_trajectories_[param_.drone_id][0].pos -
+              solved_trajectories_[param_.drone_id][size_of_trajectory].pos).norm() < 0.5) { // This check is done because, sometimes, follower UAVs generate empty trajectories
+      std::cout << "FIRST PLAN" << std::endl;
+      planner_state_ = PlannerStatus::FIRST_PLAN;
+      }
+
   if (!hasGoal()) {
     planner_state_ = PlannerStatus::FIRST_PLAN;
     std::cout << "there's no goals" << std::endl;
@@ -96,7 +103,7 @@ void TrajectoryPlanner::plan() {
       auto end_pose = solved_trajectories_[param_.drone_id].size();
       initial_pose  = solved_trajectories_[param_.drone_id][end_pose - 1];
     }
-    else{
+    else {
       initial_pose =
           solved_trajectories_[param_.drone_id]
                               [param_.planning_rate / param_.step_size + shift];
