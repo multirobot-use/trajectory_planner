@@ -65,6 +65,11 @@ class TrajectoryPlanner {
    * @brief clears all the waypoints on the queue
    */
   void clearGoals() { goals_.clear(); }
+  
+  /**
+   * @brief clear the first waypoint on the queue
+   */
+  void clearFirstGoal() { goals_.erase(goals_.begin()); }
 
   /**
    * @brief gives the remaining goals to reach
@@ -106,11 +111,25 @@ class TrajectoryPlanner {
   int getStatus() { return planner_state_; }
 
   /**
-   * @brief gives the status of the planner
+   * @brief sets the status of the planner
    *
-   * @return value of the PlannerStatus
+   * @param status_ value of the PlannerStatus
    */
   void setStatus(int status_) { planner_state_ = status_; }
+
+  /**
+   * @brief gives the flight mode
+   *
+   * @return value of the flight mode
+   */
+  int getFlightMode() { return flight_mode_; }
+
+  /**
+   * @brief sets the flight mode
+   *
+   * @param mode_ value of the flight mode
+   */
+  void setFlightMode(int mode_) { flight_mode_ = mode_; }
 
   /**
    * @brief executes the planner of the drone
@@ -141,6 +160,7 @@ class TrajectoryPlanner {
   std::map<int, std::vector<state>> solved_trajectories_;
   Eigen::Vector3d init_point_;
   int planner_state_ = PlannerStatus::FIRST_PLAN;
+  uint8_t flight_mode_ = param_.flight_mode;
   float current_time_;
   const float INSPECTING_TOL = 0.2; //! tolerance to inspect
 
