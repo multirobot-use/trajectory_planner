@@ -69,7 +69,7 @@ class TrajectoryPlanner {
   /**
    * @brief clear the first waypoint on the queue
    */
-  void clearFirstGoal() { goals_.erase(goals_.begin()); }
+  void clearFirstGoal() { skip_ = true; } // goals_.erase(goals_.begin()); // does not work!
 
   /**
    * @brief gives the remaining goals to reach
@@ -162,7 +162,8 @@ class TrajectoryPlanner {
   int planner_state_ = PlannerStatus::FIRST_PLAN;
   uint8_t flight_mode_ = param_.flight_mode;
   float current_time_;
-  const float INSPECTING_TOL = 0.2; //! tolerance to inspect
+  const float INSPECTING_TOL = 0.1; //! tolerance to inspect
+  bool skip_ = false;
 
   // std::mutex mtx_jps_map_;
   // std::mutex mtx_leader_traj_;
