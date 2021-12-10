@@ -68,7 +68,6 @@ void TrajectoryPlanner::plan() {
     if (inspecting())   std::cout << "Inspecting..." << std::endl;
     else {
       std::cout << "Inspecting: close enough!" << std::endl;
-      return;
     }
   } else if ((solved_trajectories_[param_.drone_id][0].pos -
               solved_trajectories_[param_.drone_id][size_of_trajectory].pos).norm() < 0.5) { // This check is done because, sometimes, follower UAVs generate empty trajectories
@@ -90,13 +89,9 @@ void TrajectoryPlanner::plan() {
   if (planner_state_ == PlannerStatus::FIRST_PLAN) {
     initial_pose = states_[param_.drone_id];
   } else {
+    // Put some security method to detect if the closest point on the trajectory does not make sense
     int shift = closestPoint(solved_trajectories_[param_.drone_id],
                              states_[param_.drone_id]);
-
-    // std::cout << "Shift: " << shift << std::endl;
-    // std::cout << "i: " << param_.planning_rate/param_.step_size+shift << std::endl;
-    // std::cout << "Solved trajectory size: " << solved_trajectories_[param_.drone_id].size() << std::endl;
-    // std::cout << "Maximum value: " << (solved_trajectories_[param_.drone_id].size() - (param_.planning_rate/param_.step_size)) << std::endl;
 
     if (shift > (solved_trajectories_[param_.drone_id].size() - (param_.planning_rate/param_.step_size))){
       // std::cout << "Taking end of trajectory" << std::endl;
