@@ -16,6 +16,7 @@ struct parameters {
   int drone_id = 1;
   int flight_mode = 1;
   float vel_max = 5.0;
+  float vel_inspect = 1.0;
   float acc_max = 5.0;
   std::string frame = "map";
   std::string pcd_file_path = "";
