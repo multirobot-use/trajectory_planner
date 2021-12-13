@@ -21,6 +21,7 @@ namespace trajectory_planner {
 
 enum PlannerStatus { FIRST_PLAN = 0, REPLANNED = 2, INSPECTING = 3 };
 enum MissionStatus { GO_TO = 0, MISSION_ZONE = 1 };
+enum FlightMode    { NONSTOP = 1, SMOOTH = 2, STOP = 3, INSPECT = 4};
 
 class TrajectoryPlanner {
  public:
@@ -160,7 +161,7 @@ class TrajectoryPlanner {
   std::map<int, std::vector<state>> solved_trajectories_;
   Eigen::Vector3d init_point_;
   int planner_state_ = PlannerStatus::FIRST_PLAN;
-  uint8_t flight_mode_ = param_.flight_mode;
+  int flight_mode_   = param_.flight_mode;
   float current_time_;
   const float INSPECTING_TOL = 0.1; //! tolerance to inspect
   bool skip_ = false;

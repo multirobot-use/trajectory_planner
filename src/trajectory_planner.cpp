@@ -138,6 +138,10 @@ void TrajectoryPlanner::plan() {
   initialOrientation(solved_trajectories_[param_.drone_id]);
 
   if (planner_state_ != PlannerStatus::INSPECTING)  {planner_state_ = PlannerStatus::REPLANNED;}
+
+  std::cout << " Planner state: " << planner_state_ << std::endl;
+  std::cout << " Flight mode: " << flight_mode_ << std::endl;
+
   logger_->log(start_time, "solving cycle");
 }
 
