@@ -174,6 +174,15 @@ class TrajectoryPlanner {
     reference_trajectories_[_drone_id] = reference_trajectory;
   }
 
+  /**
+   * @brief adaptive value of REACH_TOL depending on the velocity
+   *
+   * @param vel speed of the UAV
+   */
+  void adaptiveWaypointTolerance(const float &vel){
+    REACH_TOL = vel*param_.planning_rate;
+  }
+
  protected:
   const parameters param_;
   ACADO::Grid my_grid_;
@@ -186,6 +195,7 @@ class TrajectoryPlanner {
   int operation_mode_   = param_.operation_mode;
   float current_time_;
   const float INSPECTING_TOL = 0.1; //! tolerance to inspect
+  float REACH_TOL = 2;  //! tolerance to reach waypoints (DYNAMICALLY HAS TO CHANGE WITH THE param_.step_size*param_.vel_max*param_.planning_rate)
   bool skip_ = false;
 
   // std::mutex mtx_jps_map_;
@@ -262,15 +272,12 @@ class TrajectoryPlanner {
    * @return false if is not close enough
    */
   bool waypointReached(const state &point, const state &waypoint) {
-    // if (param_.operation_mode < 2)    return ((point.pos - waypoint.pos).norm() < REACH_TOL);
-    // else                           return ((point.pos - waypoint.pos).norm() < INSPECTING_TOL);
     return ((point.pos - waypoint.pos).norm() < REACH_TOL);
   }
 
  private:
 
   std::chrono::time_point<std::chrono::steady_clock> start_time_cycle_;
-  const float REACH_TOL = 2;  //! tolerance to reach waypoints (DYNAMICALLY HAS TO CHANGE WITH THE param_.step_size*param_.vel_max*param_.planning_rate)
 
   /**
    * @brief returns an initial straight trajectory for the drone according to
