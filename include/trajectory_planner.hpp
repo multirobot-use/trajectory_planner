@@ -26,7 +26,6 @@ enum OperationMode { NONSTOP = 1, SMOOTH = 2, STOP = 3, INSPECT = 4};
 class TrajectoryPlanner {
  public:
   std::unique_ptr<Logger> logger_;
-  std::vector<state> reference_traj;
   std::map<int, state> states_;
   float start_plan_time_;
 
@@ -80,16 +79,9 @@ class TrajectoryPlanner {
   std::vector<state> getGoals() { return goals_; }
 
   /**
-   * @brief gives the reference trajectory to follow
-   *
-   * @return std::vector<state> reference trajectory to follow
-   */
-  std::vector<state> getReferenceTrajectory() { return reference_traj; }
-
-  /**
    * @brief gives the last reference trajectory done
    *
-   * @return std::vector<state> last reference trajectory done
+   * @return std::vector<state> last solved trajectory done
    */
   std::vector<state> getLastTrajectory() {
     return solved_trajectories_[param_.drone_id];
@@ -98,10 +90,28 @@ class TrajectoryPlanner {
   /**
    * @brief gives the size of the last trajectory
    *
-   * @return std::size_t last reference trajectory done
+   * @return std::size_t last solved trajectory done
    */
   std::size_t getSizeTrajectory() {
     return solved_trajectories_[param_.drone_id].size();
+  }
+
+  /**
+   * @brief gives the reference trajectory of each drone
+   *
+   * @return std::vector<state> last reference trajectory done
+   */
+  std::vector<state> getReferenceTrajectory() {
+    return reference_trajectories_[param_.drone_id];
+  }
+
+  /**
+   * @brief gives the size of the last trajectory
+   *
+   * @return std::size_t last reference trajectory done
+   */
+  std::size_t getSizeReferenceTrajectory() {
+    return reference_trajectories_[param_.drone_id].size();
   }
 
   /**
@@ -153,12 +163,24 @@ class TrajectoryPlanner {
     solved_trajectories_[_drone_id] = solved_trajectory;
   }
 
+  /**
+   * @brief sets the reference trajectories for each drone
+   *
+   * @param solved_trajectory reference trajectory for each drone
+   * @param _drone_id drone
+   */
+  void setReferenceTrajectories(const std::vector<state> &reference_trajectory,
+                             int _drone_id) {
+    reference_trajectories_[_drone_id] = reference_trajectory;
+  }
+
  protected:
   const parameters param_;
   ACADO::Grid my_grid_;
   std::vector<state> goals_;
   bool init = true;
   std::map<int, std::vector<state>> solved_trajectories_;
+  std::map<int, std::vector<state>> reference_trajectories_;
   Eigen::Vector3d init_point_;
   int planner_state_ = PlannerStatus::FIRST_PLAN;
   int operation_mode_   = param_.operation_mode;
@@ -195,13 +217,23 @@ class TrajectoryPlanner {
   bool hasPose() { return (states_.size() == param_.n_drones); }
 
   /**
-   * @brief check if there is a solver trajectories for each drone
+   * @brief check if there trajectories are solved for each drone
    *
    * @return true if all the drones have a trajectory to follow
    * @return false if any of the drones does not have a trajectory to follow
    */
   bool hasSolvedTrajectories() {
     return (solved_trajectories_.size() == param_.n_drones);
+  }
+
+   /**
+   * @brief check if there are reference trajectories for each drone
+   *
+   * @return true if all the drones have a reference trajectory
+   * @return false if any of the drones does not have a reference trajectory
+   */
+  bool hasReferenceTrajectories() {
+    return (reference_trajectories_.size() == param_.n_drones);
   }
 
   /**
