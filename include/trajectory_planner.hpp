@@ -21,7 +21,7 @@ namespace trajectory_planner {
 
 enum PlannerStatus { FIRST_PLAN = 0, REPLANNED = 2, INSPECTING = 3 };
 enum MissionStatus { GO_TO = 0, MISSION_ZONE = 1 };
-enum FlightMode    { NONSTOP = 1, SMOOTH = 2, STOP = 3, INSPECT = 4};
+enum OperationMode { NONSTOP = 1, SMOOTH = 2, STOP = 3, INSPECT = 4};
 
 class TrajectoryPlanner {
  public:
@@ -119,18 +119,18 @@ class TrajectoryPlanner {
   void setStatus(int status_) { planner_state_ = status_; }
 
   /**
-   * @brief gives the flight mode
+   * @brief gives the operation mode
    *
-   * @return value of the flight mode
+   * @return value of the operation mode
    */
-  int getFlightMode() { return flight_mode_; }
+  int getOperationMode() { return operation_mode_; }
 
   /**
-   * @brief sets the flight mode
+   * @brief sets the operation mode
    *
-   * @param mode_ value of the flight mode
+   * @param mode_ value of the operation mode
    */
-  void setFlightMode(int mode_) { flight_mode_ = mode_; }
+  void setOperationMode(int mode_) { operation_mode_ = mode_; }
 
   /**
    * @brief executes the planner of the drone
@@ -161,7 +161,7 @@ class TrajectoryPlanner {
   std::map<int, std::vector<state>> solved_trajectories_;
   Eigen::Vector3d init_point_;
   int planner_state_ = PlannerStatus::FIRST_PLAN;
-  int flight_mode_   = param_.flight_mode;
+  int operation_mode_   = param_.operation_mode;
   float current_time_;
   const float INSPECTING_TOL = 0.1; //! tolerance to inspect
   bool skip_ = false;
@@ -230,7 +230,7 @@ class TrajectoryPlanner {
    * @return false if is not close enough
    */
   bool waypointReached(const state &point, const state &waypoint) {
-    // if (param_.flight_mode < 2)    return ((point.pos - waypoint.pos).norm() < REACH_TOL);
+    // if (param_.operation_mode < 2)    return ((point.pos - waypoint.pos).norm() < REACH_TOL);
     // else                           return ((point.pos - waypoint.pos).norm() < INSPECTING_TOL);
     return ((point.pos - waypoint.pos).norm() < REACH_TOL);
   }

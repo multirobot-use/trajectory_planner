@@ -14,7 +14,7 @@ struct parameters {
   float clock_rate  = 0.01;        // sec
   float topics_rate = 0.1;         // sec
   int drone_id = 1;
-  int flight_mode = 1;
+  int operation_mode = 1;
   float vel_max = 5.0;
   float vel_min = 0.25;
   float orbit_time = 120;
