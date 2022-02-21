@@ -13,7 +13,7 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh) : nh_(_nh) {
   safeGetParam(nh_, "vel_max", param_.vel_max);
   safeGetParam(nh_, "vel_min", param_.vel_min);
   safeGetParam(nh_, "vel_inspect", param_.vel_inspect);
-  safeGetParam(nh_, "go_around_time", param_.go_around_time);
+  safeGetParam(nh_, "orbit_time", param_.orbit_time);
   safeGetParam(nh_, "vel_inspect", param_.vel_inspect);
   safeGetParam(nh_, "acc_max", param_.acc_max);
   safeGetParam(nh_, "frame", param_.frame);
