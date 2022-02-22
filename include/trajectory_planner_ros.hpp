@@ -62,6 +62,7 @@ class TrajectoryPlannerRos {
   ros::Publisher tracking_pub_trajectory_;
   ros::Publisher corridor_pub_;
   ros::Publisher pub_point_cloud_;
+
   // Services
   ros::ServiceServer service_activate_planner;
   ros::ServiceServer service_waypoint;
@@ -130,6 +131,9 @@ class TrajectoryPlannerRos {
   void uavVelocityCallback(const geometry_msgs::TwistStamped::ConstPtr &msg,
                            int id);
 
+  /*! \brief Callback for point cloud data
+   *   \param msg point cloud information
+   **/
   void pcdCallback(const sensor_msgs::PointCloud2::ConstPtr &msg);
 
   /*! \brief function to publish last solved trajectory

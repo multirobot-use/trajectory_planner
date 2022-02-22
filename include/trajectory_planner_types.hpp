@@ -6,22 +6,22 @@
 
 namespace trajectory_planner{
 struct parameters {
-  float horizon_length = 40;       // number of steps
-  int n_drones = 1;                // number of drones
-  float step_size = 0.1;           // seconds
-  float planning_rate = 1.0;       // sec
-  float visualization_rate = 1.0;  // sec
-  float clock_rate  = 0.01;        // sec
-  float topics_rate = 0.1;         // sec
-  int drone_id = 1;
-  int operation_mode = 1;
-  float vel_max = 5.0;
-  float vel_min = 0.25;
-  float orbit_time = 120;
-  float vel_inspect = 1.0;
-  float acc_max = 5.0;
-  std::string frame = "map";
-  std::string pcd_file_path = "";
+  float horizon_length      = 40;     // number of steps
+  int n_drones              = 1;      // number of drones
+  float step_size           = 0.1;    // seconds
+  float planning_rate       = 1.0;    // sec
+  float visualization_rate  = 1.0;    // sec
+  float clock_rate          = 0.01;   // sec
+  float topics_rate         = 0.1;    // sec
+  int drone_id              = 1;      // id of the drone
+  int operation_mode        = 1;      // operation mode
+  float vel_max             = 5.0;    // maximum speed
+  float vel_min             = 0.25;   // minimum speed
+  float orbit_time          = 120;    // orbit time
+  float vel_inspect         = 1.0;    // inspection speed
+  float acc_max             = 5.0;    // maximum acceleration
+  std::string frame         = "map";  // frame
+  std::string pcd_file_path = "";     // path of PCD file
 };
 
 struct state {
@@ -71,7 +71,7 @@ inline bool trajectoryHasNan(std::vector<state> &trajectory) {
 inline Eigen::Vector3d rotateEig(const Eigen::Vector3d &eigen_to_rotate,
                                  const float angle) {
   Eigen::Quaterniond rotation = eulerToQuat(0, 0, angle);
-  Eigen::Matrix3d rotMat = rotation.toRotationMatrix();
+  Eigen::Matrix3d rotMat      = rotation.toRotationMatrix();
   return rotMat * eigen_to_rotate;
 }
 

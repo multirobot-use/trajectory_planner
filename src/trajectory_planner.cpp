@@ -292,12 +292,12 @@ bool TrajectoryPlanner::optimalTrajectory(
 
   ACADO::OCP ocp(my_grid_);
   ocp.subjectTo(model);
-  // ocp.subjectTo(-param_.acc_max <= ax_ <= param_.acc_max);
-  // ocp.subjectTo(-param_.acc_max <= ay_ <= param_.acc_max);
-  // ocp.subjectTo(-param_.acc_max <= az_ <= param_.acc_max);
-  // ocp.subjectTo(-param_.vel_max <= vx_ <= param_.vel_max);
-  // ocp.subjectTo(-param_.vel_max <= vy_ <= param_.vel_max);
-  // ocp.subjectTo(-param_.vel_max <= vz_ <= param_.vel_max);
+  ocp.subjectTo(-param_.acc_max <= ax_ <= param_.acc_max);
+  ocp.subjectTo(-param_.acc_max <= ay_ <= param_.acc_max);
+  ocp.subjectTo(-param_.acc_max <= az_ <= param_.acc_max);
+  ocp.subjectTo(-param_.vel_max <= vx_ <= param_.vel_max);
+  ocp.subjectTo(-param_.vel_max <= vy_ <= param_.vel_max);
+  ocp.subjectTo(-param_.vel_max <= vz_ <= param_.vel_max);
 
   ocp.subjectTo(ACADO::AT_START, px_ == initial_trajectory[0].pos(0));
   ocp.subjectTo(ACADO::AT_START, py_ == initial_trajectory[0].pos(1));
@@ -309,14 +309,17 @@ bool TrajectoryPlanner::optimalTrajectory(
   ocp.subjectTo(ACADO::AT_START, ay_ == initial_trajectory[0].acc(1));
   ocp.subjectTo(ACADO::AT_START, az_ == initial_trajectory[0].acc(2));
 
-  // generate polyhedrons
+  // Generate polyhedrons
+  // NOTE: Check what really happens when a huge change of formation angle reference
+  // on the followers: it seems that the UAV pose is not the correct one (?)
   // mtx_jps_map_.lock();
   vec_E<Polyhedron<3>> polyhedron_vector =
       safe_corridor_generator_->getSafeCorridorPolyhedronVector(
           vectorToPath(initial_trajectory));  // get polyhedrons
   // mtx_jps_map_.unlock();
-  // get JPS path along which the polyhedrons were generated - needed to
-  // generation of correct constraints
+
+  // Get JPS path along which the polyhedrons were generated - needed to
+  // Generation of correct constraints
   nav_msgs::PathPtr collision_free_path =
       safe_corridor_generator_->getLastPath();
 

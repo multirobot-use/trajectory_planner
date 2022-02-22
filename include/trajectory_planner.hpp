@@ -191,12 +191,12 @@ class TrajectoryPlanner {
   std::map<int, std::vector<state>> solved_trajectories_;
   std::map<int, std::vector<state>> reference_trajectories_;
   Eigen::Vector3d init_point_;
-  int planner_state_ = PlannerStatus::FIRST_PLAN;
-  int operation_mode_   = param_.operation_mode;
+  int planner_state_   = PlannerStatus::FIRST_PLAN;
+  int operation_mode_  = param_.operation_mode;
   float current_time_;
   const float INSPECTING_TOL = 0.1; //! tolerance to inspect
-  float REACH_TOL = 2;  //! tolerance to reach waypoints (DYNAMICALLY HAS TO CHANGE WITH THE param_.step_size*param_.vel_max*param_.planning_rate)
-  bool skip_ = false;
+  float REACH_TOL = 2;              //! dynamic tolerance to reach waypoints
+  bool skip_      = false;
 
   // std::mutex mtx_jps_map_;
   // std::mutex mtx_leader_traj_;
@@ -338,7 +338,6 @@ class TrajectoryPlanner {
    * @param traj_to_optimize trajectory to optimize
    */
   void optimalOrientation(const std::vector<state> &traj_to_optimize);
-
 
   /**
    * @brief returns the value of the closest point according to a given
