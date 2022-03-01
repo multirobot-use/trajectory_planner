@@ -137,6 +137,9 @@ void TrajectoryPlanner::plan() {
   // Calculate orientation
   initialOrientation(solved_trajectories_[param_.drone_id]);
 
+  // Optimize orientation (check without it, about the change of quadrant while flying)
+  optimalOrientation(solved_trajectories_[param_.drone_id]);
+
   if (planner_state_ != PlannerStatus::INSPECTING)  {planner_state_ = PlannerStatus::REPLANNED;}
 
   std::cout << " Planner state: "  << planner_state_ << std::endl;
@@ -159,41 +162,142 @@ void TrajectoryPlanner::updateMap(
   logger_->log(start_time, "update maps time");
 }
 
+// void TrajectoryPlanner::optimalOrientation(
+//     const std::vector<state> &traj_to_optimize) {
+//   // DifferentialState heading, pitch, v_heading, v_pitch;
+//   ACADO::DifferentialState heading, v_heading;
+//   // Control a_heading, a_pitch;
+//   ACADO::Control a_heading;
+
+//   float a_limit     = 0.5;
+//   float v_limit     = 0.5;
+//   float pitch_limit = 1.57;
+//   ACADO::DifferentialEquation model;
+
+//   model << dot(heading) == v_heading;
+//   model << dot(v_heading) == a_heading;
+//   // model << dot(pitch) == v_pitch;
+//   // model << dot(v_pitch) == a_pitch;
+
+//   ACADO::OCP ocp(my_grid_);
+//   ocp.subjectTo(model);
+//   ocp.subjectTo(-a_limit <= a_heading <= a_limit);
+//   // ocp.subjectTo(-a_limit <= a_pitch <= a_limit);
+//   ocp.subjectTo(-v_limit <= v_heading <= v_limit);
+//   // ocp.subjectTo(-v_limit <= v_pitch <= v_limit);
+//   // ocp.subjectTo(-pitch_limit <= pitch <= pitch_limit);
+
+//   ACADO::VariablesGrid reference_trajectory(2, my_grid_); // 2 for pitch
+//   ACADO::DVector       reference_point(2); // 2 for pitch
+//   reference_trajectory.setVector(0, reference_point);  // TODO: check
+//   indexing for (int k = 0; k < TIME_HORIZON; k++) {
+//     reference_point(0) =
+//     mrs_lib::geometry::radians::unwrap(_desired_trajectory[k].heading,
+//     reference_point(0)); reference_point(1) = 0;
+//     reference_trajectory.setVector(k, reference_point);  // TODO: check
+//     indexing
+//   }
+
+//   // set initial guess so that it meats the constraints
+//   // _initial_guess[0].v_heading = _initial_guess[0].v_heading < -v_limit ?
+//   -v_limit : _initial_guess[0].v_heading;
+//   // _initial_guess[0].v_pitch   = _initial_guess[0].v_pitch > v_limit ?
+//   v_limit : _initial_guess[0].v_pitch;
+//   // _initial_guess[0].a_heading = _initial_guess[0].a_heading < -a_limit ?
+//   -a_limit : _initial_guess[0].a_heading;
+//   // _initial_guess[0].a_pitch   = _initial_guess[0].a_pitch > a_limit ?
+//   a_limit : _initial_guess[0].a_pitch;
+
+//   ocp.subjectTo(AT_START, heading == _initial_guess[0].heading);
+//   ocp.subjectTo(AT_START, pitch == _initial_guess[0].pitch);
+//   ocp.subjectTo(AT_START, v_heading == _initial_guess[0].v_heading);
+//   ocp.subjectTo(AT_START, v_pitch == _initial_guess[0].v_pitch);
+//   ocp.subjectTo(AT_START, a_heading == _initial_guess[0].a_heading);
+//   ocp.subjectTo(AT_START, a_pitch == _initial_guess[0].a_pitch);
+
+//   ACADO::Function rf;
+
+//   rf << heading << a_heading;
+//   // rf << pitch;
+
+//   ACADO::DMatrix S(2, 2);
+//   // DMatrix S(2, 2);
+
+//   S.setIdentity();
+//   S(0, 0) = 1.0;
+//   S(1, 1) = 1.0;
+
+//   ocp.minimizeLSQ(S, rf, reference_trajectory);
+
+//   ACADO::OptimizationAlgorithm solver_(ocp);
+
+//   // reference_trajectory.print();
+//   // call the solver
+//   ACADO::returnValue value = solver_.solve();
+//   // get solution
+//   ACADO::VariablesGrid output_states, output_control;
+
+//   solver_.getDifferentialStates(output_states);
+//   solver_.getControls(output_control);
+//   ROS_INFO("[Acado]: Output states: ");
+//   output_states.print();
+//   for (uint i = 0; i < N; i++) {
+//     _robot_states[i].heading   = output_states(i, 0);
+//     _robot_states[i].pitch     = output_states(i, 1);
+//     _robot_states[i].v_heading = output_states(i, 2);
+//     _robot_states[i].v_pitch   = output_states(i, 3);
+//     _robot_states[i].a_heading = output_control(i, 0);
+//     _robot_states[i].a_pitch   = output_control(i, 1);
+//   }
+
+//   heading.clearStaticCounters();
+//   v_heading.clearStaticCounters();
+//   int success_value = value;
+//   ROS_INFO("[Acado]: Acado angular optimization took %.3f, success = %d ",
+//   (ros::Time::now() - start).toSec(), success_value); return success_value;
+// }
+
 void TrajectoryPlanner::optimalOrientation(
     const std::vector<state> &traj_to_optimize) {
-  // // DifferentialState heading, pitch, v_heading, v_pitch;
-  // DifferentialState heading, v_heading;
-  // // Control a_heading, a_pitch;
-  // Control a_heading;
+  ACADO::DifferentialState heading, pitch, v_heading, v_pitch;
+  ACADO::Control a_heading, a_pitch;
 
-  // float a_limit     = 0.5;
-  // float v_limit     = 0.5;
-  // float pitch_limit = 1.57;
-  // DifferentialEquation model;
+  float a_limit     = 0.5;
+  float v_limit     = 0.5;
+  float pitch_limit = 1.57;
+  ACADO::DifferentialEquation model;
 
-  // model << dot(heading) == v_heading;
-  // model << dot(v_heading) == a_heading;
-  // // model << dot(pitch) == v_pitch;
-  // // model << dot(v_pitch) == a_pitch;
+  model << dot(heading) == v_heading;
+  model << dot(v_heading) == a_heading;
+  model << dot(pitch) == v_pitch;
+  model << dot(v_pitch) == a_pitch;
 
-  // OCP ocp(my_grid_);
-  // ocp.subjectTo(model);
-  // ocp.subjectTo(-a_limit <= a_heading <= a_limit);
-  // // ocp.subjectTo(-a_limit <= a_pitch <= a_limit);
-  // ocp.subjectTo(-v_limit <= v_heading <= v_limit);
-  // // ocp.subjectTo(-v_limit <= v_pitch <= v_limit);
-  // // ocp.subjectTo(-pitch_limit <= pitch <= pitch_limit);
+  ACADO::OCP ocp(my_grid_);
+  ocp.subjectTo(model);
+  ocp.subjectTo(-a_limit     <= a_heading <= a_limit);
+  ocp.subjectTo(-a_limit     <= a_pitch   <= a_limit);
+  ocp.subjectTo(-v_limit     <= v_heading <= v_limit);
+  ocp.subjectTo(-v_limit     <= v_pitch   <= v_limit);
+  ocp.subjectTo(-pitch_limit <= pitch     <= pitch_limit);
 
-  // VariablesGrid reference_trajectory(2, my_grid_); // 2 for pitch
-  // DVector       reference_point(2); // 2 for pitch
-  // reference_trajectory.setVector(0, reference_point);  // TODO: check
-  // indexing for (int k = 0; k < TIME_HORIZON; k++) {
-  //   reference_point(0) =
-  //   mrs_lib::geometry::radians::unwrap(_desired_trajectory[k].heading,
-  //   reference_point(0)); reference_point(1) = 0;
-  //   reference_trajectory.setVector(k, reference_point);  // TODO: check
-  //   indexing
-  // }
+  // Add initial conditions? ACADO::AT_START...
+
+  ACADO::VariablesGrid reference_trajectory(4, my_grid_); // 2 yaw, 2 pitch
+  ACADO::DVector       reference_point(4); // 2 yaw, 2 pitch
+  reference_trajectory.setVector(0, reference_point);  // TODO: check
+
+  Eigen::Vector3d initial_orientation, orientation_aux;
+
+  initial_orientation = trajectory_planner::quatToEuler(traj_to_optimize[0].orientation);
+
+  for (int k = 0; k < traj_to_optimize.size(); k++) {
+    orientation_aux = trajectory_planner::quatToEuler(traj_to_optimize[k].orientation);
+    reference_point(0) = orientation_aux(2); // Yaw/heading
+    reference_point(1) = 0.0;
+    reference_point(2) = orientation_aux(1); // Pitch
+    reference_point(3) = 0.0;
+    reference_trajectory.setVector(k, reference_point);
+  }
 
   // // set initial guess so that it meats the constraints
   // // _initial_guess[0].v_heading = _initial_guess[0].v_heading < -v_limit ?
@@ -212,30 +316,43 @@ void TrajectoryPlanner::optimalOrientation(
   // ocp.subjectTo(AT_START, a_heading == _initial_guess[0].a_heading);
   // ocp.subjectTo(AT_START, a_pitch == _initial_guess[0].a_pitch);
 
-  // Function rf;
+  ocp.subjectTo(ACADO::AT_START, heading   == initial_orientation(2));
+  ocp.subjectTo(ACADO::AT_START, pitch     == initial_orientation(1));
+  ocp.subjectTo(ACADO::AT_START, v_heading == 0.0);
+  ocp.subjectTo(ACADO::AT_START, v_pitch   == 0.0);
+  ocp.subjectTo(ACADO::AT_START, a_heading == 0.0);
+  ocp.subjectTo(ACADO::AT_START, a_pitch   == 0.0);
 
-  // rf << heading << a_heading;
-  // // rf << pitch;
+  ACADO::Function rf;
 
-  // DMatrix S(2, 2);
-  // // DMatrix S(2, 2);
+  rf << heading << a_heading << pitch << a_pitch;
 
-  // S.setIdentity();
-  // S(0, 0) = 1.0;
-  // S(1, 1) = 1.0;
+  ACADO::DMatrix S(4, 4);
 
-  // ocp.minimizeLSQ(S, rf, reference_trajectory);
+  S.setIdentity();
 
-  // OptimizationAlgorithm solver_(ocp);
+  ocp.minimizeLSQ(S, rf, reference_trajectory);
 
-  // // reference_trajectory.print();
-  // // call the solver
-  // returnValue value = solver_.solve();
-  // // get solution
-  // VariablesGrid output_states, output_control;
+  ACADO::OptimizationAlgorithm solver_(ocp);
 
-  // solver_.getDifferentialStates(output_states);
-  // solver_.getControls(output_control);
+  // No prints and set MAX_TIME
+  solver_.set(ACADO::MAX_TIME, 2.0);
+  solver_.set(ACADO::PRINT_INTEGRATOR_PROFILE, false);
+  // solver_.set(ACADO::CONIC_SOLVER_PRINT_LEVEL, ACADO::NONE);
+  // solver_.set(ACADO::RELAXATION_PARAMETER, 30.0);
+  solver_.set(ACADO::PRINTLEVEL, ACADO::NONE);
+  solver_.set(ACADO::PRINT_COPYRIGHT, ACADO::NONE);
+  solver_.set(ACADO::INTEGRATOR_PRINTLEVEL, ACADO::NONE);
+
+  // reference_trajectory.print();
+  // call the solver
+  bool value = solver_.solve();
+  // get solution
+  ACADO::VariablesGrid output_states, output_control;
+
+  solver_.getDifferentialStates(output_states);
+  solver_.getControls(output_control);
+
   // ROS_INFO("[Acado]: Output states: ");
   // output_states.print();
   // for (uint i = 0; i < N; i++) {
@@ -247,12 +364,24 @@ void TrajectoryPlanner::optimalOrientation(
   //   _robot_states[i].a_pitch   = output_control(i, 1);
   // }
 
-  // heading.clearStaticCounters();
-  // v_heading.clearStaticCounters();
+  Eigen::Quaterniond quaternion_aux;
+
+  for (int k = 0; k < traj_to_optimize.size(); k++) {
+    quaternion_aux = trajectory_planner::eulerToQuat(0.0, output_states(k, 2), output_states(k, 0));
+    solved_trajectories_[param_.drone_id][k].orientation = quaternion_aux;
+  }
+
+  heading.clearStaticCounters();
+  v_heading.clearStaticCounters();
+  pitch.clearStaticCounters();
+  v_pitch.clearStaticCounters();
+
   // int success_value = value;
   // ROS_INFO("[Acado]: Acado angular optimization took %.3f, success = %d ",
   // (ros::Time::now() - start).toSec(), success_value); return success_value;
+
 }
+
 
 std::vector<state> TrajectoryPlanner::pathFromPointToAnother(
     const Eigen::Vector3d &initial, const Eigen::Vector3d &final) {
@@ -267,6 +396,7 @@ std::vector<state> TrajectoryPlanner::pathFromPointToAnother(
 
   return trajectory_to_optimize;
 }
+
 
 bool TrajectoryPlanner::optimalTrajectory(
     const std::vector<state> &initial_trajectory) {
@@ -361,7 +491,7 @@ bool TrajectoryPlanner::optimalTrajectory(
     reference_point(3) = 0.0;
     reference_point(4) = 0.0;
     reference_point(5) = 0.0;
-    reference_trajectory.setVector(k, reference_point);  // TODO: check
+    reference_trajectory.setVector(k, reference_point);
   }
 
   // DEFINE LSQ function to minimize diff from desired trajectory
@@ -376,7 +506,9 @@ bool TrajectoryPlanner::optimalTrajectory(
   ocp.minimizeLSQ(S, rf, reference_trajectory);
 
   ACADO::OptimizationAlgorithm solver(ocp);
-  solver.set(ACADO::MAX_TIME, 2.0);  // TODO: have it as parameter
+
+  // No prints and set MAX_TIME
+  solver.set(ACADO::MAX_TIME, 2.0);
   solver.set(ACADO::PRINT_INTEGRATOR_PROFILE, false);
   // solver.set(ACADO::CONIC_SOLVER_PRINT_LEVEL, ACADO::NONE);
   // solver.set(ACADO::RELAXATION_PARAMETER, 30.0);
