@@ -280,41 +280,32 @@ void TrajectoryPlanner::optimalOrientation(
   ocp.subjectTo(-v_limit     <= v_pitch   <= v_limit);
   ocp.subjectTo(-pitch_limit <= pitch     <= pitch_limit);
 
-  // Add initial conditions? ACADO::AT_START...
-
   ACADO::VariablesGrid reference_trajectory(4, my_grid_); // 2 yaw, 2 pitch
-  ACADO::DVector       reference_point(4); // 2 yaw, 2 pitch
-  reference_trajectory.setVector(0, reference_point);  // TODO: check
-
+  ACADO::DVector       reference_point(4);                // 2 yaw, 2 pitch
+  reference_trajectory.setVector(0, reference_point);
+  
   Eigen::Vector3d initial_orientation, orientation_aux;
+  std::vector<float> yaw_values, adapted_yaw_values;
 
   initial_orientation = trajectory_planner::quatToEuler(traj_to_optimize[0].orientation);
 
+  // Be aware with heading angle. Can pass from M_PI to -M_PI. Adapt for the optimization problem
+  // Adapt heading angles
   for (int k = 0; k < traj_to_optimize.size(); k++) {
     orientation_aux = trajectory_planner::quatToEuler(traj_to_optimize[k].orientation);
-    reference_point(0) = orientation_aux(2); // Yaw/heading
+    yaw_values.push_back(orientation_aux(2));
+  }
+
+  adapted_yaw_values = adaptYawValues(yaw_values);
+
+  for (int k = 0; k < traj_to_optimize.size(); k++) {
+    orientation_aux = trajectory_planner::quatToEuler(traj_to_optimize[k].orientation);
+    reference_point(0) = adapted_yaw_values[k]; // Yaw/heading
     reference_point(1) = 0.0;
     reference_point(2) = orientation_aux(1); // Pitch
     reference_point(3) = 0.0;
     reference_trajectory.setVector(k, reference_point);
   }
-
-  // // set initial guess so that it meats the constraints
-  // // _initial_guess[0].v_heading = _initial_guess[0].v_heading < -v_limit ?
-  // -v_limit : _initial_guess[0].v_heading;
-  // // _initial_guess[0].v_pitch   = _initial_guess[0].v_pitch > v_limit ?
-  // v_limit : _initial_guess[0].v_pitch;
-  // // _initial_guess[0].a_heading = _initial_guess[0].a_heading < -a_limit ?
-  // -a_limit : _initial_guess[0].a_heading;
-  // // _initial_guess[0].a_pitch   = _initial_guess[0].a_pitch > a_limit ?
-  // a_limit : _initial_guess[0].a_pitch;
-
-  // ocp.subjectTo(AT_START, heading == _initial_guess[0].heading);
-  // ocp.subjectTo(AT_START, pitch == _initial_guess[0].pitch);
-  // ocp.subjectTo(AT_START, v_heading == _initial_guess[0].v_heading);
-  // ocp.subjectTo(AT_START, v_pitch == _initial_guess[0].v_pitch);
-  // ocp.subjectTo(AT_START, a_heading == _initial_guess[0].a_heading);
-  // ocp.subjectTo(AT_START, a_pitch == _initial_guess[0].a_pitch);
 
   ocp.subjectTo(ACADO::AT_START, heading   == initial_orientation(2));
   ocp.subjectTo(ACADO::AT_START, pitch     == initial_orientation(1));
@@ -613,6 +604,33 @@ void TrajectoryPlanner::polyhedronsToACADO(
       //              cs.A()(k, 2) * pt_inside(2));
     }
   }
+}
+
+std::vector<float> TrajectoryPlanner::adaptYawValues(std::vector<float> &v_yaw){
+  float yaw;
+  float previous_loop_value = v_yaw[0];
+  bool add_plus_2pi  = false;
+  bool add_minus_2pi = false;
+  std::vector<float> adapted_yaw_vector;
+
+  adapted_yaw_vector.push_back(previous_loop_value);
+
+  for (int i = 1; i < v_yaw.size(); i++){
+    if (abs(previous_loop_value - v_yaw[i]) > M_PI){
+      if (previous_loop_value > 0)  add_plus_2pi  = true;
+      else                          add_minus_2pi = true;
+    }
+
+    if (add_plus_2pi)         yaw = v_yaw[i] + 2*M_PI;
+    else if (add_minus_2pi)   yaw = v_yaw[i] - 2*M_PI;
+    else                      yaw = v_yaw[i];
+
+    previous_loop_value = v_yaw[i];
+    adapted_yaw_vector.push_back(yaw);
+  }
+
+  return adapted_yaw_vector;
+
 }
 
 // change to free last point

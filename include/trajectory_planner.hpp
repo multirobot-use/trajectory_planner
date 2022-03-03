@@ -290,6 +290,13 @@ class TrajectoryPlanner {
     return pathFromPointToAnother(_initial_pose.pos, goals_[0].pos);
   }
 
+    /**
+   * @brief Function that adapts the heading angles in order to not have discontinuities
+   * 
+   * @param v_yaw vector of yaw values
+   */
+  std::vector<float> adaptYawValues(std::vector<float> &v_yaw);
+
   /**
    * @brief returns the inspection trajectory for the drone according to
    * the initial pose
