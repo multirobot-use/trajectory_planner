@@ -45,20 +45,20 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh) : nh_(_nh) {
     }
   }
 
-  // ros::SubscribeOptions ops =
-  //     ros::SubscribeOptions::create<sensor_msgs::PointCloud2>(
-  //         "/drone_" + std::to_string(param_.drone_id) +
-  //             "/os1_cloud_node/points",  // topic name
-  //         1,                             // queue length
-  //         boost::bind(&TrajectoryPlannerRos::pcdCallback, this, _1),
-  //         ros::VoidPtr(),
-  //         &this->pcd_queue_  // pointer to callback queue object
-  //     );
-  // ops.transport_hints = ros::TransportHints().tcpNoDelay();
+  ros::SubscribeOptions ops =
+      ros::SubscribeOptions::create<sensor_msgs::PointCloud2>(
+          "/drone_" + std::to_string(param_.drone_id) +
+              "/os1_cloud_node/points",  // topic name
+          1,                             // queue length
+          boost::bind(&TrajectoryPlannerRos::pcdCallback, this, _1),
+          ros::VoidPtr(),
+          &this->pcd_queue_  // pointer to callback queue object
+      );
+  ops.transport_hints = ros::TransportHints().tcpNoDelay();
 
-  // pcd_sub_ = nh_.subscribe(ops);
+  pcd_sub_ = nh_.subscribe(ops);
 
-  // async_spinner_.start();
+  async_spinner_.start();
 
   // create timer
   planTimer_ = nh_.createTimer(ros::Duration(param_.planning_rate),
@@ -157,7 +157,7 @@ void TrajectoryPlannerRos::replanCB(const ros::TimerEvent &e) {
                 trajectory_planner_ptr_->getReferenceTrajectory());
     trajectory_planner_ptr_->safe_corridor_generator_->publishCorridor(
         corridor_pub_);
-    // trajectory_planner_ptr_->safe_corridor_generator_->updateMaps();
+    trajectory_planner_ptr_->safe_corridor_generator_->updateMaps();
   }
   trajectory_planner_ptr_->safe_corridor_generator_->publishCloud(
         pub_point_cloud_);

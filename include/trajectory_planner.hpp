@@ -198,7 +198,7 @@ class TrajectoryPlanner {
   float REACH_TOL = 2;              //! dynamic tolerance to reach waypoints
   bool skip_      = false;
 
-  // std::mutex mtx_jps_map_;
+  std::mutex mtx_jps_map_;
   // std::mutex mtx_leader_traj_;
 
   /**

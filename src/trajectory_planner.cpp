@@ -47,11 +47,12 @@ TrajectoryPlanner::TrajectoryPlanner(const parameters _param)
 TrajectoryPlanner::TrajectoryPlanner()
     : my_grid_(0.0, (param_.horizon_length - 1) * param_.step_size,
                param_.horizon_length) {
-  // initialize logger
+  // Initialize logger
   logger_ = std::make_unique<Logger>(param_.drone_id);
 }
 
 TrajectoryPlanner::~TrajectoryPlanner() {}
+
 
 void TrajectoryPlanner::plan() {
   auto start_time = std::chrono::steady_clock::now();
@@ -156,106 +157,15 @@ void TrajectoryPlanner::updateMap(
                                    float(states_[param_.drone_id].pos.z())};
 
   pcl_cloud_ptr_ = _pcd_input;
+  mtx_jps_map_.lock();
 
- // safe_corridor_generator_->updateMaps(pcl_cloud_ptr_, my_pose);
-  // mtx_jps_map_.unlock();
+  // Should not get any parameters?
+  safe_corridor_generator_ -> updateMaps(pcl_cloud_ptr_, my_pose);
+  // safe_corridor_generator_ -> updateMaps();
+  mtx_jps_map_.unlock();
   logger_->log(start_time, "update maps time");
 }
 
-// void TrajectoryPlanner::optimalOrientation(
-//     const std::vector<state> &traj_to_optimize) {
-//   // DifferentialState heading, pitch, v_heading, v_pitch;
-//   ACADO::DifferentialState heading, v_heading;
-//   // Control a_heading, a_pitch;
-//   ACADO::Control a_heading;
-
-//   float a_limit     = 0.5;
-//   float v_limit     = 0.5;
-//   float pitch_limit = 1.57;
-//   ACADO::DifferentialEquation model;
-
-//   model << dot(heading) == v_heading;
-//   model << dot(v_heading) == a_heading;
-//   // model << dot(pitch) == v_pitch;
-//   // model << dot(v_pitch) == a_pitch;
-
-//   ACADO::OCP ocp(my_grid_);
-//   ocp.subjectTo(model);
-//   ocp.subjectTo(-a_limit <= a_heading <= a_limit);
-//   // ocp.subjectTo(-a_limit <= a_pitch <= a_limit);
-//   ocp.subjectTo(-v_limit <= v_heading <= v_limit);
-//   // ocp.subjectTo(-v_limit <= v_pitch <= v_limit);
-//   // ocp.subjectTo(-pitch_limit <= pitch <= pitch_limit);
-
-//   ACADO::VariablesGrid reference_trajectory(2, my_grid_); // 2 for pitch
-//   ACADO::DVector       reference_point(2); // 2 for pitch
-//   reference_trajectory.setVector(0, reference_point);  // TODO: check
-//   indexing for (int k = 0; k < TIME_HORIZON; k++) {
-//     reference_point(0) =
-//     mrs_lib::geometry::radians::unwrap(_desired_trajectory[k].heading,
-//     reference_point(0)); reference_point(1) = 0;
-//     reference_trajectory.setVector(k, reference_point);  // TODO: check
-//     indexing
-//   }
-
-//   // set initial guess so that it meats the constraints
-//   // _initial_guess[0].v_heading = _initial_guess[0].v_heading < -v_limit ?
-//   -v_limit : _initial_guess[0].v_heading;
-//   // _initial_guess[0].v_pitch   = _initial_guess[0].v_pitch > v_limit ?
-//   v_limit : _initial_guess[0].v_pitch;
-//   // _initial_guess[0].a_heading = _initial_guess[0].a_heading < -a_limit ?
-//   -a_limit : _initial_guess[0].a_heading;
-//   // _initial_guess[0].a_pitch   = _initial_guess[0].a_pitch > a_limit ?
-//   a_limit : _initial_guess[0].a_pitch;
-
-//   ocp.subjectTo(AT_START, heading == _initial_guess[0].heading);
-//   ocp.subjectTo(AT_START, pitch == _initial_guess[0].pitch);
-//   ocp.subjectTo(AT_START, v_heading == _initial_guess[0].v_heading);
-//   ocp.subjectTo(AT_START, v_pitch == _initial_guess[0].v_pitch);
-//   ocp.subjectTo(AT_START, a_heading == _initial_guess[0].a_heading);
-//   ocp.subjectTo(AT_START, a_pitch == _initial_guess[0].a_pitch);
-
-//   ACADO::Function rf;
-
-//   rf << heading << a_heading;
-//   // rf << pitch;
-
-//   ACADO::DMatrix S(2, 2);
-//   // DMatrix S(2, 2);
-
-//   S.setIdentity();
-//   S(0, 0) = 1.0;
-//   S(1, 1) = 1.0;
-
-//   ocp.minimizeLSQ(S, rf, reference_trajectory);
-
-//   ACADO::OptimizationAlgorithm solver_(ocp);
-
-//   // reference_trajectory.print();
-//   // call the solver
-//   ACADO::returnValue value = solver_.solve();
-//   // get solution
-//   ACADO::VariablesGrid output_states, output_control;
-
-//   solver_.getDifferentialStates(output_states);
-//   solver_.getControls(output_control);
-//   ROS_INFO("[Acado]: Output states: ");
-//   output_states.print();
-//   for (uint i = 0; i < N; i++) {
-//     _robot_states[i].heading   = output_states(i, 0);
-//     _robot_states[i].pitch     = output_states(i, 1);
-//     _robot_states[i].v_heading = output_states(i, 2);
-//     _robot_states[i].v_pitch   = output_states(i, 3);
-//     _robot_states[i].a_heading = output_control(i, 0);
-//     _robot_states[i].a_pitch   = output_control(i, 1);
-//   }
-
-//   heading.clearStaticCounters();
-//   v_heading.clearStaticCounters();
-//   int success_value = value;
-//   ROS_INFO("[Acado]: Acado angular optimization took %.3f, success = %d ",
-//   (ros::Time::now() - start).toSec(), success_value); return success_value;
-// }
 
 void TrajectoryPlanner::optimalOrientation(
     const std::vector<state> &traj_to_optimize) {
@@ -302,7 +212,7 @@ void TrajectoryPlanner::optimalOrientation(
     orientation_aux = trajectory_planner::quatToEuler(traj_to_optimize[k].orientation);
     reference_point(0) = adapted_yaw_values[k]; // Yaw/heading
     reference_point(1) = 0.0;
-    reference_point(2) = orientation_aux(1); // Pitch
+    reference_point(2) = orientation_aux(1);    // Pitch
     reference_point(3) = 0.0;
     reference_trajectory.setVector(k, reference_point);
   }
@@ -336,24 +246,15 @@ void TrajectoryPlanner::optimalOrientation(
   solver_.set(ACADO::INTEGRATOR_PRINTLEVEL, ACADO::NONE);
 
   // reference_trajectory.print();
-  // call the solver
+
+  // Call the solver
   bool value = solver_.solve();
-  // get solution
+  // Get solution
   ACADO::VariablesGrid output_states, output_control;
 
   solver_.getDifferentialStates(output_states);
   solver_.getControls(output_control);
 
-  // ROS_INFO("[Acado]: Output states: ");
-  // output_states.print();
-  // for (uint i = 0; i < N; i++) {
-  //   _robot_states[i].heading   = output_states(i, 0);
-  //   _robot_states[i].pitch     = output_states(i, 1);
-  //   _robot_states[i].v_heading = output_states(i, 2);
-  //   _robot_states[i].v_pitch   = output_states(i, 3);
-  //   _robot_states[i].a_heading = output_control(i, 0);
-  //   _robot_states[i].a_pitch   = output_control(i, 1);
-  // }
 
   Eigen::Quaterniond quaternion_aux;
 
@@ -433,11 +334,11 @@ bool TrajectoryPlanner::optimalTrajectory(
   // Generate polyhedrons
   // NOTE: Check what really happens when a huge change of formation angle reference
   // on the followers: it seems that the UAV pose is not the correct one (?)
-  // mtx_jps_map_.lock();
+  mtx_jps_map_.lock();
   vec_E<Polyhedron<3>> polyhedron_vector =
       safe_corridor_generator_->getSafeCorridorPolyhedronVector(
           vectorToPath(initial_trajectory));  // get polyhedrons
-  // mtx_jps_map_.unlock();
+  mtx_jps_map_.unlock();
 
   // Get JPS path along which the polyhedrons were generated - needed to
   // Generation of correct constraints
