@@ -17,7 +17,7 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh) : nh_(_nh) {
   safeGetParam(nh_, "vel_inspect", param_.vel_inspect);
   safeGetParam(nh_, "acc_max", param_.acc_max);
   safeGetParam(nh_, "frame", param_.frame);
-  safeGetParam(nh_, "drone_id", param_.drone_id);
+  safeGetParam(nh_, "static_map", param_.static_map);
   safeGetParam(nh_, "pcl_filepath", param_.pcd_file_path);
 
 
