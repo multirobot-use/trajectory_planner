@@ -20,9 +20,11 @@ struct parameters {
   float orbit_time          = 120;    // orbit time
   float vel_inspect         = 1.0;    // inspection speed
   float acc_max             = 5.0;    // maximum acceleration
-  bool static_map           = true;      // static map
+  bool static_map           = true;   // static map
   std::string frame         = "map";  // frame
   std::string pcd_file_path = "";     // path of PCD file
+  bool obstacle_avoidance   = false;  // turn on/off the obstacle avoidance
+  bool opt_orientation      = false;  // turn on/off the opt problem for orientation
 };
 
 struct state {

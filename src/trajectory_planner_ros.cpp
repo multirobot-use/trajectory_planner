@@ -3,7 +3,7 @@
 using namespace trajectory_planner;
 
 TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh) : nh_(_nh) {
-  // ros params
+  // ROS params
   safeGetParam(nh_, "horizon_length", param_.horizon_length);
   safeGetParam(nh_, "n_drones", param_.n_drones);
   safeGetParam(nh_, "step_size", param_.step_size);
@@ -19,6 +19,8 @@ TrajectoryPlannerRos::TrajectoryPlannerRos(ros::NodeHandle _nh) : nh_(_nh) {
   safeGetParam(nh_, "frame", param_.frame);
   safeGetParam(nh_, "static_map", param_.static_map);
   safeGetParam(nh_, "pcl_filepath", param_.pcd_file_path);
+  safeGetParam(nh_, "obstacle_avoidance", param_.obstacle_avoidance);
+  safeGetParam(nh_, "opt_orientation", param_.opt_orientation);
 
 
   trajectory_planner_ptr_ = std::make_unique<TrajectoryPlanner>(param_);
