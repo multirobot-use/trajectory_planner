@@ -180,7 +180,7 @@ class TrajectoryPlanner {
    * @param vel speed of the UAV
    */
   void adaptiveWaypointTolerance(const float &vel){
-    REACH_TOL = vel*param_.planning_rate;
+    REACH_TOL = vel*param_.planning_rate*1.15;
   }
 
  protected:
