@@ -139,7 +139,10 @@ void TrajectoryPlanner::plan() {
   initialOrientation(solved_trajectories_[param_.drone_id]);
 
   // Optimize orientation (check without it, about the change of quadrant while flying)
-  optimalOrientation(solved_trajectories_[param_.drone_id]);
+  if (param_.opt_orientation){
+    optimalOrientation(solved_trajectories_[param_.drone_id]);
+  }
+  
 
   if (planner_state_ != PlannerStatus::INSPECTING)  {planner_state_ = PlannerStatus::REPLANNED;}
 
