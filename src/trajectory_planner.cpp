@@ -334,56 +334,60 @@ bool TrajectoryPlanner::optimalTrajectory(
   // Generate polyhedrons
   // NOTE: Check what really happens when a huge change of formation angle reference
   // on the followers: it seems that the UAV pose is not the correct one (?)
-  mtx_jps_map_.lock();
-  vec_E<Polyhedron<3>> polyhedron_vector =
-      safe_corridor_generator_->getSafeCorridorPolyhedronVector(
-          vectorToPath(initial_trajectory));  // get polyhedrons
-  mtx_jps_map_.unlock();
 
-  // Get JPS path along which the polyhedrons were generated - needed to
-  // Generation of correct constraints
-  nav_msgs::PathPtr collision_free_path =
-      safe_corridor_generator_->getLastPath();
-
-  std::vector<Eigen::Vector3d> collision_free_path_vector;
-
-  for (int i = 0; i < collision_free_path->poses.size();
-       i++) {  // nav_msgs to eigen vector
-    collision_free_path_vector.push_back(
-        Eigen::Vector3d(collision_free_path->poses[i].pose.position.x,
-              collision_free_path->poses[i].pose.position.y,
-              collision_free_path->poses[i].pose.position.z));
-    // std::cout << " x: " << collision_free_path->poses[i].pose.position.x
-    //           << " y: " << collision_free_path->poses[i].pose.position.y
-    //           << " z: " << collision_free_path->poses[i].pose.position.z
-    //           << std::endl;
-  }
-  polyhedronsToACADO(ocp, polyhedron_vector, collision_free_path_vector, px_, py_, pz_);
-  // setup reference trajectory
+  // Setup reference trajectory
   ACADO::VariablesGrid reference_trajectory(6, my_grid_);
   ACADO::DVector reference_point(6);
 
+  nav_msgs::PathPtr collision_free_path;
 
-  // OPERATING WITH INITIAL TRAJECTORY
-  // for (int k = 0; k < param_.horizon_length; k++) {
-  //   reference_point(0) = initial_trajectory[k].pos(0);
-  //   reference_point(1) = initial_trajectory[k].pos(1);
-  //   reference_point(2) = initial_trajectory[k].pos(2);
-  //   reference_point(3) = 0.0;
-  //   reference_point(4) = 0.0;
-  //   reference_point(5) = 0.0;
-  //   reference_trajectory.setVector(k, reference_point);  // TODO: check
-  // }
+  if (param_.obstacle_avoidance){
+    mtx_jps_map_.lock();
+    vec_E<Polyhedron<3>> polyhedron_vector =
+        safe_corridor_generator_->getSafeCorridorPolyhedronVector(
+            vectorToPath(initial_trajectory));  // get polyhedrons
+    mtx_jps_map_.unlock();
 
-  // OPERATING WITH COLLISION FREE PATH
-  for (int k = 0; k < collision_free_path->poses.size(); k++) {
-    reference_point(0) = collision_free_path->poses[k].pose.position.x;
-    reference_point(1) = collision_free_path->poses[k].pose.position.y;
-    reference_point(2) = collision_free_path->poses[k].pose.position.z;
-    reference_point(3) = 0.0;
-    reference_point(4) = 0.0;
-    reference_point(5) = 0.0;
-    reference_trajectory.setVector(k, reference_point);
+    // Get JPS path along which the polyhedrons were generated - needed to
+    // Generation of correct constraints
+    collision_free_path = safe_corridor_generator_->getLastPath();
+
+    std::vector<Eigen::Vector3d> collision_free_path_vector;
+
+    for (int i = 0; i < collision_free_path->poses.size(); i++) {
+      collision_free_path_vector.push_back(
+          Eigen::Vector3d(collision_free_path->poses[i].pose.position.x,
+                collision_free_path->poses[i].pose.position.y,
+                collision_free_path->poses[i].pose.position.z));
+      // std::cout << " x: " << collision_free_path->poses[i].pose.position.x
+      //           << " y: " << collision_free_path->poses[i].pose.position.y
+      //           << " z: " << collision_free_path->poses[i].pose.position.z
+      //           << std::endl;
+    }
+    polyhedronsToACADO(ocp, polyhedron_vector, collision_free_path_vector, px_, py_, pz_);
+
+    // OPERATING WITH COLLISION FREE PATH
+    for (int k = 0; k < collision_free_path->poses.size(); k++) {
+      reference_point(0) = collision_free_path->poses[k].pose.position.x;
+      reference_point(1) = collision_free_path->poses[k].pose.position.y;
+      reference_point(2) = collision_free_path->poses[k].pose.position.z;
+      reference_point(3) = 0.0;
+      reference_point(4) = 0.0;
+      reference_point(5) = 0.0;
+      reference_trajectory.setVector(k, reference_point);
+    }
+  }
+  else{
+    // OPERATING WITH INITIAL TRAJECTORY
+    for (int k = 0; k < initial_trajectory.size(); k++) {
+      reference_point(0) = initial_trajectory[k].pos(0);
+      reference_point(1) = initial_trajectory[k].pos(1);
+      reference_point(2) = initial_trajectory[k].pos(2);
+      reference_point(3) = 0.0;
+      reference_point(4) = 0.0;
+      reference_point(5) = 0.0;
+      reference_trajectory.setVector(k, reference_point);  // TODO: check
+    }
   }
 
   // DEFINE LSQ function to minimize diff from desired trajectory
@@ -420,7 +424,16 @@ bool TrajectoryPlanner::optimalTrajectory(
   //   mtx_leader_traj_.lock();
   // }
 
-  for (int k = 0; k < collision_free_path->poses.size(); k++) {
+  int size_for;
+
+  if (param_.obstacle_avoidance){
+    size_for = collision_free_path->poses.size();
+  }
+  else{
+    size_for = initial_trajectory.size();
+  }
+
+  for (int k = 0; k < size_for; k++) {
     // solved_trajectories_[param_.drone_id][k].time_stamp = current_time_ + k*param_.step_size;
     solved_trajectories_[param_.drone_id][k].time_stamp = initial_trajectory[0].time_stamp + k*param_.step_size;
     // std::cout << "Current time: " << current_time_ << "   k=" << k << ": " << solved_trajectories_[param_.drone_id][k].time_stamp << std::endl;  
