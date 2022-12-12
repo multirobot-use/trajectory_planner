@@ -1,0 +1,50 @@
+<launch>
+    <arg name="drone_id" default="1"/>
+    <arg name="pcl_map_filename" default="$(find trajectory_planner)/maps/power_tower_danube.pcd" />
+
+
+    <!-- Launch Gazebo simulation -->
+	<rosparam param="/use_sim_time">true</rosparam>
+    <node pkg="px4_bringup" type="launch_gzworld.py" name="gazebo_world" output="screen"
+    args="-physics=ode -world=$(find px4_bringup)/config/empty_light.world
+		  -add_model_path=$(find grvc_gazebo_worlds)/models
+		  -description_package=robots_description">
+		<rosparam param="sim_origin">[38.138728, -3.173825, 0]</rosparam>  <!-- [lat,lon,alt] -->
+	</node>
+	<!-- Launch robot id=1 -->
+	<include file="$(find px4_bringup)/launch/spawn_robot.launch" ns="drone_$(arg drone_id)">
+		<arg name="id" value="$(arg drone_id)"/>
+        <arg name="robot_model" value="typhoon_h480"/>
+		<arg name="material" value="Indigo"/>
+        <arg name="x" value="-5"/>
+        <arg name="y" value="0"/>
+        <arg name="z" value="0"/>
+        <arg name="yaw" value="0"/>
+	</include> 
+
+     <!-- Launch UAL server for drone id=1 -->
+    <node pkg="ual_backend_mavros" type="ual_backend_mavros_server" name="ual" output="screen" ns="drone_$(arg drone_id)">
+        <param name="uav_id" value="$(arg drone_id)"/>
+        <param name="pose_frame_id" value="map"/>
+        <rosparam param="home_pose">[-5, 0, 0.0]</rosparam>
+    </node>
+    
+    <!-- Launch trajectory_planner_node -->
+    <!-- <node pkg="trajectory_planner" type="trajectory_planner_node" name="trajectory_planner_ros" output="screen" ns="drone_$(arg drone_id)">
+        <rosparam file="$(find trajectory_planner)/test/param.yml" command="load"/>
+        <param name="drone_id" value="$(arg drone_id)"/>
+        <param name="pcl_filepath" value="$(arg pcl_map_filename)"/>
+    </node> -->
+
+   <include file="$(find trajectory_follower)/launch/trajectory_follower.launch">
+        <arg name="drone_id" value="$(arg drone_id)"/>
+    </include>    
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="static_transformation_node" args="0 0 0 3.14 0 0 drone_1/base_link drone_1/velodyne"></node>
+
+    <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find trajectory_planner)/test/rviz.rviz">
+    </node>    
+
+    
+
+</launch>
